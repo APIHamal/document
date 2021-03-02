@@ -1,0 +1,29 @@
+docker image build -t name:version dir
+	用于构建docker镜像文件
+	Dockerfile文件需要防在构建上下文目录中(程序代码所在的位置)
+	例如:docker image build -t server:latest /var/program/server
+FROM(Dockerfile文件的第一行通常就是FROM指令)
+	from指令用于指定构建当前镜像所需要的基础镜像
+	例如:from ubuntu
+	指定需要依赖ubuntu镜像作为基础
+RUN
+	run指令用于在镜像内部执行命令
+	例如:run mkdir /usr/server
+	创建指定的文件目录
+	RUN命令存在两种格式
+	SHELL命令格式->RUN mkdir /usr/server
+	EXEC命令格式 ->RUN ["mkdir","/usr/server"]
+COPY
+	copy将构建上下文目录中的文件复制到容器中指定的目录下
+	例如:COPY . /home/app
+	容器中的目录可以不用提前创建如果不存在则自动创建
+CMD
+	cmd指令类似与run命令
+	run命令是在docker image build时执行
+	cmd运行的时间点是docker container run
+	cmd作用是为容器指定默认的运行程序
+	SHELL命令格式->cmd java -jar server.jar
+	EXEC命令格式-->CMD ["java","-jar","server.jar"]
+WORKDIR
+	切换工作目录
+	docker image build时执行RUN命令时都会在workdir中执行

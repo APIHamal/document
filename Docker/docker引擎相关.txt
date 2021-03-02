@@ -1,0 +1,53 @@
+dockver --verdion
+	显示当前docker的版本信息
+docker version
+	显示当前docker server、docker client信息(docker引擎与客户端client成功运行时会返回信息)
+	如果相关docker服务尚未启动
+	则执行完该命令后不会输出相关的信息(通常是docker server信息不会被返回)
+docker image ls
+	显示主机当前可用的docker镜像
+docker imgae pull imgae:tag
+	从docker仓库中拉取执行的镜像
+	例如:docker image pull ububtu:latest
+		 拉取ubuntu标签为latest的镜像(可能不是最新的)
+		 如果不加标签ubuntu:latest->ubuntu
+		 则默认拉取latest标签的镜像文件
+docker container run image:tag <progreamm>  CTRL+PQ----->退出容器并且保持容器继续执行
+	docker引擎创建一个容器并在容器中运行镜像
+	如果tag为latest则可以不输否则必须包含完整的文件名
+	例如:docker container run ubuntu:latest /bin/bash
+  -it参数启用交互模式此时进入容器内容
+	docker container run -it ubuntu:latest /bin/bash
+docker container ls
+	显示当前主机中正在运行的docker容器
+  -a参数列出主机中所有的容器(包括已经停止运行的容器)
+  例如:docker container ls -a
+docker container exec -it quizzical_dirac /bin/bash
+	命令连接到一个当前正在运行中的容器并开启交互模式
+	#docker container exec -it id progreamm
+	只能用于连接当前正在运行中的容器
+	如果容器被暂停了或停止了则使用docker container exec会进行报错处理
+	并且该命令执行时会开启新的进程运行指定的程序
+docker container stop name|id
+	停止当前正在运行中的容器
+	#注意停止的容器只能通过docker container ls -a参数列出
+docker contaienr rm name|id
+	删除当前已经停止运行的容器(删除容器后卷不会受到影响)
+	-f参数强制删除容器(运行中的容器也可以被删除)
+	docker contaienr rm -f name|id 强制删除容器
+docker image pull user/imgae:version
+	在docker官方仓库DockerHub中拉取非"官方制作"(个人制作)的镜像
+	user表示的是个人DockerHub的账号名称
+docker image pull address/user/image:version
+	在第三方网站或服务器上拉取镜像操作
+docker container stop
+	命令用来停止docker容器但是实际上stop状态的容器相当于"暂停"的状态(对应VMware中的挂起状态)
+docker container rm $(docker container ls -aq) -f
+	命令强制删除当前主机中所有的容器(无论是否在运行都会删除)
+docker image prune -a
+	删除当前主机中所有的docker镜像文件
+docker container run --restart param
+	命令用于配置容器自身的重启策略
+	always 容器非显式的停止时会自动重启(docker-engine重启后会自动重启与unless-stoped的唯一差别)
+	unless-stopped 容器非显式的停止时会自动重启(docker-engine重启后不会自动重启)
+	on-failed 容器退出时未显示Exit(0)则会重启与always策略相同重启docker engine容器也会重启

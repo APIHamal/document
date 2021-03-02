@@ -1,0 +1,29 @@
+#YAML相关语法
+YAML中#开始的行内容表示注释
+YAML中缩进关系只能通过空格来处理(不能用TAB处理)
+YAML中键值对关系(name: value):后必须跟着一个空格
+例如
+    name: lizhengpeng
+    age: 30
+YAML中支持数组的数据类型
+单维的数组直接使用-进行标识即可
+例如
+    array: 
+     - hello
+     - world
+    objarray: 
+     -
+      name: A
+      age: 10
+     -
+      name: B
+      age: 30
+    multiarray: 
+     -
+      - 1
+      - 2
+      - 3
+     -
+      - 4
+      - 5
+      - 6
