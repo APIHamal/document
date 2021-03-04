@@ -6,6 +6,7 @@ docker version
 	则执行完该命令后不会输出相关的信息(通常是docker server信息不会被返回)
 docker image ls
 	显示主机当前可用的docker镜像
+	例如常用的JDK1.8镜像docker image pull java:8-jdk-alpine
 docker imgae pull imgae:tag
 	从docker仓库中拉取执行的镜像
 	例如:docker image pull ububtu:latest
@@ -51,3 +52,5 @@ docker container run --restart param
 	always 容器非显式的停止时会自动重启(docker-engine重启后会自动重启与unless-stoped的唯一差别)
 	unless-stopped 容器非显式的停止时会自动重启(docker-engine重启后不会自动重启)
 	on-failed 容器退出时未显示Exit(0)则会重启与always策略相同重启docker engine容器也会重启
+docker image history image
+	查看docker镜像的构建历史记录
