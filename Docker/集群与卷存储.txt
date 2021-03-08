@@ -1,0 +1,76 @@
+docker volume create name
+	命令用来创建docker的卷对象
+	例如:docker volume create mysql
+	创建一个名叫mysql的本地卷(卷创建完成后可以挂在到容器或服务中使用)
+docker volume create -d driver name
+	创建卷对象并使用执行的驱动创建
+	例如:docker volume create -d nfs nfs_file
+	创建一个以nfs驱动名叫nfs_file的卷对象
+docker volume inspect name
+	检查卷的详情
+	例如:docker volume inspect mysql
+	可以查看本地卷的存储位置以及创建时间等
+docker volume ls
+	查看当前主机上已经被创建的卷对象
+	例如:docker volume ls
+docker volume rm name
+	删除指定的卷对象
+	注意:无论是docker volume rm、docker volume prune
+	都不允许删除当前已经被容器挂载并且并被容器使用中的卷对象
+docker volume prune
+	删除当前所有未被容器正在使用的卷对象(危险操作)
+	注意:无论是rm、prune都不允许删除正在被使用中的卷对象
+		 并且volume没有强制删除的选项
+docker swarm init
+	参数:
+		--advertise-addr 192.168.168.168:2377
+			该参数的作用是指定其他节点加入到swarm时的
+		--listen-addr 192.168.168.168:2377
+			该参数作用是用来监听swarm流量请求
+	将当前主机切换到swarm集群模式并且设置当前主机为一个
+	管理节点
+docker swarm join-token
+	该命令用来生成加入管理节点和工作节点的token字符串
+	参数:
+		manager 生成管理节点加入当前集群的token字符串
+		worker	生成工作节点加入当前集群的token字符串
+	例如:
+		docker swarm join-token manager 生成管理节点字符串
+		docker swarm join-token worker	生成工作节点字符串
+docker swarm leave --force
+	强制当前docker主机退出swarm模式
+docker node ls
+	列出当前swarm集群中所有的docker节点
+docker service create
+	该命令用来在swarm模式下创建docker服务
+	注意:docker service create仅支持在swarm模式下进行使用
+	并且该命令可使用的参数与创建容器时可使用的参数类似
+	--replicas
+		参数指定副本的数量swarm会按照当前设置的副本数量
+		均衡的将副本分散到集群中
+		###注意:管理节点也会运行程序
+				管理节点不仅仅是用来控制swarm集群一个作用
+	例如:
+		docker create service --name test -p 7777:9999 --replicas 5 redis
+		此命令用来在集群中搭建5个redis服务
+		如果还需要挂在卷存储则可以按照如下命令进行搭建
+		docker service create --name redis -p 7777:9999 --replicas 5 --mount source=redis_dir,target=/home/redis/data/ redis
+		以该种方式启动则可将卷挂载到容器中
+docker service ls
+	显示当前swarm集群中正在运行的服务有哪些
+docker service ps name
+	该命令查看具体的服务以及服务副本运行在哪些机器上
+	以及副本当前的运行状态
+docker service scale name
+	swarm中用来对当前集群服务进行扩缩容的命令
+	例如:docker servcei scale redis=5
+		 该命令用来将当前的redis副本扩容或者缩小到5个
+docker service rm name
+	用来删除当前swarm集群中的某个服务
+	注意:当在管理节点中删除时会清除所有的服务副本
+	该命令相当于prune的作用
+
+	
+	
+	
+	
