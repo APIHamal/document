@@ -27,3 +27,19 @@ CMD
 WORKDIR
 	切换工作目录
 	docker image build时执行RUN命令时都会在workdir中执行
+LABEL
+	该命令给镜像添加一些元数据信息相当于一些描述信息
+	例如:LABEL author lizhengpeng
+		 LABEL desc "一个测试的镜像内容"
+ENV
+	该命令设置镜像的环境变量并长期存在
+	ENV设置的环境变量可以在容器中进行访问
+	例如
+		ENV hello world
+		ENV localpath /usr/local/redis/redis-server
+ENTRYPOINT
+	该命令同CMD命令的作用类型用来设置容器默认运行的程序
+	例如 ENTRYPOINT ["redis-server","/usr/redis/redis.conf"]
+	注意:ENTRYPOINT设置的命令默认情况下不会被
+	docker container run image:tag program中的
+	执行的程序覆盖

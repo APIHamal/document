@@ -1,4 +1,38 @@
-#docker-compose是一套docker生态中的外部工具
-#使用python语言解析docker-compose.yml文件并
-#使用docker的API对容器进行管理
-#docker-compose文件内容格式如下
+#docker-compose安装
+sudo curl -L https://get.daocloud.io/docker/compose/releases/download/1.25.1/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+	uname -m 显示机器的主机架构
+	例如:uname -m 输出x86_64
+	uname -s 显示操作系统的内核名称
+	例如:uname -x输出linux
+	命令其实下载docker-compose-linux-x86_64的可执行的文件
+#给文件添加可执行的权限
+sudo chmod +x /usr/local/bin/docker-compose
+#验证docker-compose是否安装成功
+docker-compose --version
+	若docker-compose安装成功则会输出docker-compose相关信息
+docker-compose up
+	单引擎模式下可以使用docker-compose启动多容器的
+	docker应用默认虚招名为docker-compose.yaml或者
+	docker-compose.yml的文件进行管理
+	参数 -f 指定声明式的文件
+	docker-compose up -f file
+		以指定的文件来管理docker应用
+	docker-compose up -d
+		以后台运行容器的方式运行docker应用
+docker-compose down
+	该命令用来销毁当前docker-compose文件部署的docker应用
+	该命令会删除docker容器、网络
+docker-compose stop
+	该命令停止当前docker-compose部署的docker应用
+	相当于docker container stop命令的作用
+	并不会删除docker容器和网络
+docker-compose restart
+	该命令用于重启当前docker-compose文件部署的docker应用
+	相当于docker container start命令的作用
+docker-compose rm
+	该命令用于删除当前docker-compose文件部署的应用
+	相当于docker container prune -f的作用
+	会删除当前已经部署的所有的容器对象
+docker-compose ps
+	该命令用于显示当前已经部署的docker容器的运行的状态
+	相当于docker container ls -a命令的作用
