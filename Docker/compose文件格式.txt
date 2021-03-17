@@ -1,4 +1,4 @@
-#docker-compose安装
+###docker-compose安装
 sudo curl -L https://get.daocloud.io/docker/compose/releases/download/1.25.1/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
 	uname -m 显示机器的主机架构
 	例如:uname -m 输出x86_64
