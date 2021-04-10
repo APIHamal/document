@@ -18,3 +18,9 @@ ErrorController(AbstractErrorController)
   其中关键的应该是AbstractErrorController中的getStatus方法
   来获取当前内部错误的HTTP错误码
   然后根据错误码进行路由
+  1)配置文件中指定server.error.path路径此路径为尚未进入控制器
+    发生错误时mvc将路由到的路径并会带入HttpServletRequest对象
+  2)配置错误控制器并处理路径server.error.path的响应请求返回JSON
+    或者时view视图到客户端
+	###AbstractErrorController中的getStatus方法可以获取当前的
+	未进入controller的错误类型(重写404的原理便是定义ErrorController)
