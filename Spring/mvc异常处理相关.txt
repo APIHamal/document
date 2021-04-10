@@ -1,0 +1,20 @@
+@Controller+@ExceptionHandler(Exception.class)
+##两个注解配合可以解决Controller中的异常
+  但是无法处理HandlerIntercept中的异常根据MVC的流程图可以进行分析
+  并且该方法可以处理Controller中除404错误之外的异常
+HandlerExceptionResolver
+##HandlerExceptionResolver是最强大的异常处理机制
+  该方法可以处理MVC流程处理时发生的一切的异常
+  缺点是方法强制返回参数为ModelAndView
+  可以在方法中处理感兴趣的异常如果对该异常不感兴趣直接
+  可以直接返回null来将该异常交给框架处理
+  例如:
+	MappingJackson2JsonView的使用可以返回JSON字符串来统一异常处理
+ErrorController(AbstractErrorController)
+##实现ErrorController即可实现处理服务器内部的错误
+  例如500、404等错误请求tomcat等服务器内部发生错误的时候
+  会重新路由到/error路径下因此本质上其实可以自定义一个Controller
+  并在其中实现/error地址来作为服务器内部异常发生时的错误
+  其中关键的应该是AbstractErrorController中的getStatus方法
+  来获取当前内部错误的HTTP错误码
+  然后根据错误码进行路由
