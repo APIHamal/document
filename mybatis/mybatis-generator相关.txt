@@ -1,0 +1,67 @@
+###项目依赖Maven进行构建(Idea中右侧maven按钮plugins中可找到mybatis-generator提供的maven构建目标直接双击运行即可)
+1)增加mybatis-generator依赖
+<dependency>
+	<groupId>org.mybatis.generator</groupId>
+	<artifactId>mybatis-generator-core</artifactId>
+	<version>1.3.2</version>
+</dependency>
+2)增加mybatis-generator的Maven插件
+<build>
+	<plugins>
+		<plugin>
+			<groupId>org.mybatis.generator</groupId>
+			<artifactId>mybatis-generator-maven-plugin</artifactId>
+			<version>1.3.2</version>
+			<configuration>
+					<!-- 此位置是mybatis-generator的配置文件位置 -->
+				　　<configurationFile>src/main/resources/generatorConfig.xml</configurationFile>
+				<verbose>true</verbose>
+				<overwrite>true</overwrite>
+			</configuration>
+		</plugin>
+	</plugins>
+</build>
+3)#####重要的generatorConfig.xml的配置内容如下
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE generatorConfiguration
+        PUBLIC " -//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
+        "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+<generatorConfiguration>
+	##加载jdbc驱动的位置
+    <classPathEntry location="C:\develop\repository\mysql\mysql-connector-java\5.1.46\mysql-connector-java-5.1.46.jar"/>
+    <context id="my" targetRuntime="MyBatis3">
+        <commentGenerator>
+            <property name="suppressDate" value="false"/>
+            <property name="suppressAllComments" value="true"/>
+        </commentGenerator>
+		##jdbc连接驱动的URL
+        <jdbcConnection driverClass="com.mysql.jdbc.Driver"
+                        connectionURL="jdbc:mysql://192.168.168.168/online_disk" userId="root"
+                        password="pc121381"/>
+		##生成java代码的位置->targetPackage为目标包的名字
+							->targetProject则为项目中存放代码的位置
+        <javaModelGenerator targetPackage="com.lizhengpeng.prod.dropbox.hello.model"
+                            targetProject="src/main/java">
+            <property name="enableSubPackages" value="true"/>
+            <property name="trimStrings" value="true"/>
+        </javaModelGenerator>
+		##生成mapper.xml文件的位置->targetPackage为目标包的名字
+								  ->targetProject则为项目中存放文件的位置
+        <sqlMapGenerator targetPackage="com.lizhengpeng.prod.dropbox.hello.dao.impl"
+                         targetProject="src/main/java">
+            <property name="enableSubPackages" value="true"/>
+        </sqlMapGenerator>
+		##生成dao文件的位置->targetPackage为目标包的名字
+							 ->targetProject则为项目中存放文件的位置
+        <javaClientGenerator targetPackage="com.lizhengpeng.prod.dropbox.hello.dao"
+                             targetProject="src/main/java" type="XMLMAPPER">
+            <property name="enableSubPackages" value="true"/>
+        </javaClientGenerator>
+		##这里是要生成代码参照的表的名字以及生成PO的名称等配置
+        <table tableName="t_user" domainObjectName="User"
+               enableCountByExample="false" enableUpdateByExample="false"
+               enableDeleteByExample="false" enableSelectByExample="false"
+               selectByExampleQueryId="false">
+        </table>
+    </context>
+</generatorConfiguration>
