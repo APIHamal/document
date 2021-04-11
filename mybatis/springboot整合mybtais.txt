@@ -1,0 +1,35 @@
+@MapperScan
+##该注解应该标记在入口类上(@SpringBootApplication标记的类)
+  作为扫描Mapper接口并进行代理的作用
+  例如:
+	@MapperScan("com.**.dao.*Mapper")类似于@ComponentScan的语法
+	其中**表示任意的目录
+	*表示任意的字符
+	上面这段表达式表示的是查找com目录及其子目录下
+	所在在dao目录中以Mapper结尾的接口并对其进行代理
+mybatis:
+  mapper-locations
+  
+##该端配置应该放在application.yml或者application.properties中
+  用来配置mybtais扫描mapper.xml文件的位置
+  否则启动的时候mybatis会报错inbound错误
+  例如:
+	classpath:com/**/dao/impl/*.xml
+	同@MapperScan相同的语法
+	**表示任意层级的目录
+	*表示任意的字符
+#######maven打包时会丢弃src/main/java代码文件中的xml等
+因此需要在maven的编译打包阶段保留xml等文件
+将如下文件添加到build标签中即可保留文件
+<build>
+	<resources>
+		<resource>
+			<directory>src/main/java</directory>
+			<includes>
+				<include>**/*.properties</include>
+				<include>**/*.xml</include>
+			</includes>
+			<filtering>false</filtering>
+		</resource>
+	</resources>
+</build>
