@@ -1,0 +1,48 @@
+#springboot整合redis与传统使用spring data redis并无其他的区别
+###重要的点在于配置RedisTemplate对象该对象接收RedisConnectionFactory
+   对象做为和redis的连接
+   RedisTemplate中两个关键的点在于key与value的序列化问题
+   ###key与value的序列化是分别指键和值的序列化
+      key序列化通常使用StringRedisSerializer该序列化器直接将对象转换成字符串
+	  value的序列化通常有以下三种
+	  1)JdkSerializationRedisSerializer使用jdk自带的序列化功能(不推荐序列化后内容不可读)
+	  2)Jackson2JsonRedisSerializer将对象序列化成JSON但是JSON字符串不包含原始类信息
+	  3)GenericJackson2JsonRedisSerializer将对象序列化成JSON并且JSON字符串包含原始
+	    的类型信息也就意味着从JSON反序列化时可以不用指定类型的信息将Object对象强转成
+		自己希望得到的类型即可(推荐使用该对象)
+	例子:
+		#Redis的配置类(主要是配置RedisTemplate对象)
+		@Configuration
+		public class RedisConfiguration {
+			@Bean
+			public RedisTemplate redisTemplate(RedisConnectionFactory connectionFactory){
+			    ###创建RedisTemplate对象
+				RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
+				###设置键对象的序列化器(序列化成字符串)
+				redisTemplate.setKeySerializer(new StringRedisSerializer());
+				###设置值对象的序列化器(序列化成JSON字符串并且保留原始类信息)
+				redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+				###设置Redis的连接工厂
+				redisTemplate.setConnectionFactory(connectionFactory);
+				return redisTemplate;
+			}
+		}
+		#服务层代码或其他位置直接应用@Bean中配置的对象即可
+		@Service
+		public class UserServiceImpl implements UserService {
+			@Autowired
+			private RedisTemplate<Object, Object> redisTemplate;
+
+			@Override
+			public int saveUser(User user) {
+				redisTemplate.opsForValue().set(user.getId(),user);
+				return 1;
+			}
+		}
+########如果是SpringBoot整合Redis服务则不用配置RedisConnectionFactory对象
+		直接在application.yml或者properties中配置好redis服务器的相关配置
+		在@Configuration类中直接引用RedisConnectionFactory对象即可然后调用
+		RedisTemplate对象的setConnectionFactory方法即可
+		
+		
+		
