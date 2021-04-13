@@ -2,7 +2,8 @@
 ##该注解应该标记在入口类上(@SpringBootApplication标记的类)
   作为扫描Mapper接口并进行代理的作用
   例如:
-	@MapperScan("com.**.dao.*Mapper")类似于@ComponentScan的语法
+	@MapperScan("com.**.dao")类似于@ComponentScan的语法
+	###@MapperScan扫描指定到包不是指定到类
 	其中**表示任意的目录
 	*表示任意的字符
 	上面这段表达式表示的是查找com目录及其子目录下
