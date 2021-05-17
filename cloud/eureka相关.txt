@@ -1,0 +1,34 @@
+###相关的Maven依赖
+<dependency>
+	<groupId>org.springframework.cloud</groupId>
+	<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+</dependency>
+<dependency>
+	<groupId>org.springframework.cloud</groupId>
+	<artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+</dependency>
+###Eureka服务端相关的主要配置
+主要使用到的注解配置:@EnableEurekaServer
+eureka:
+  instance:
+    instance-id: eureka-server:${server.port} //指定eureka的身份信息
+  client:
+    fetch-registry: false  		//表示不会从eurekaServer中获取服务信息
+    register-with-eureka: false //表示不会将自身注册到eurekaServer中
+    service-url:
+      defaultZone: http://127.0.0.1:${server.port}/eureka //默认的eurekaServer的服务API接口地址
+  server:
+    enable-self-preservation: false		//是否启用eureka的自我保护模式(短时间内eureka发线大量服务掉线[可能发生网络分区]会启用保护模式,该模式下不会踢掉任何服务)
+    eviction-interval-timer-in-ms: 5000 //设置服务端剔除已下线或未续约的客户端的定时任务的执行频率(例如每5秒钟执行一次定时任务)
+###Eureka客户端的相关配置
+主要使用到的注解配置:@EnableEurekaClient
+eureka:
+  client:
+	registry-fetch-interval-seconds: 10 //用于设置当前客户端从server拉取注册信息到本地的时间间隔(拉取服务实例的数据信息:例如每10秒获取一次)
+    service-url:
+      defaultZone: http://127.0.0.1:7777/eureka  //eureka服务端的URL地址
+  instance:
+    lease-expiration-duration-in-seconds: 15 //配置当前客户端的过期时间(超过该时间未发送心跳将会被server端踢掉[生产环境建议默认值])
+    lease-renewal-interval-in-seconds: 10 //续租的时间间隔(发送心跳到服务端的时间间隔:例如每10秒进行一次续约)
+	prefer-ip-address: true //该属性用于配置eurekaClient将自身的IP地址注册到server中而不是主机名(注意:在server的页面中点击任意实例的URL即可看出差别)
+	
