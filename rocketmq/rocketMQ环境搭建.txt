@@ -25,8 +25,19 @@ client---            |               |           ---client
 
 ###RocketMQ高可用的集群部署(通常是2主2从并且两台从机交叉配置master节点)
 
-###RocketAdmin相关使用
-1)
+###RocketMq社区扩展模块(https://github.com/apache/rocketmq-externals)
+其中rocketmq-connect-console提供了RocketMQ的管理页面
+该项目是一个标准的SpringBoot项目
 
-
+###RocketMQ常用的运维命令(如果执行运维命令mqadmin失败请确认JAVA_HOME等相关环境变量设置成功)
+1)查看当前rocketMq集群的信息
+mqadmin clusterList -n 192.168.168.168:9876
+2)查看当前所有的topic列表
+mqadmin topicList -n 192.168.168.168:9876
+3)新增一个topic
+#rocketmq是指集群的名称(broker的启动文件中配置)
+#topicWarning是指要增加的topic的名称
+mqadmin updateTopic -n 192.168.168.168:9876 -c rocketmq -t topic1
+4)删除指定的topic
+mqadmin deleteTopic -n 192.168.168.168:9876 -c rocketmq -t topic1
 
