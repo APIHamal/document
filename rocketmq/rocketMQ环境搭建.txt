@@ -1,0 +1,32 @@
+###RocketMQ的架构图如下
+        NameServer<---->NameServer<---->NameServer
+		|            |               |           |
+		|            |               |           |
+client---            |               |           ---client
+                     |               |
+               Broker<---->Broker<---->Broker
+#RocketMq中Client(Producer与Consumer)与NameServer进行交互(NameServer相当于eureka的作用)
+这样client就不会与Broker产生硬编码因此Broker可以动态的进行扩容
+
+###RocketMQ单节点的部署
+1)bin/mqnamesrv用于启动nameserver服务(命名服务)其中该基本会调用runserver脚本
+需要修改该runserver脚本(在脚本中修改JDK申请内存容量的大小)
+2)bin/mqbroker该脚本用于启动broker服务其中该脚本会调用runbroker脚本
+需要修改该runbroker.sh脚本(在脚本中修改JDK申请内存容量的大小)
+!!!如果未按照上述要求修改脚本可能导致申请内存失败从而无法启动服务
+#相关命令
+	nohup comman &
+	该命令以后台方式运行command命令并将内容输出到nohup.out文件中
+	1)启用nameserver命令
+	nohup bin/mqnamesrv &
+	2)启用broker命令是需要指定默认的broker的配置文件默认使用conf/broker.conf文件即可
+	nohup bin/mqbroker -c conf/broker.conf &
+	即可在后台以conf中的配置启动broker服务
+
+###RocketMQ高可用的集群部署(通常是2主2从并且两台从机交叉配置master节点)
+
+###RocketAdmin相关使用
+1)
+
+
+
