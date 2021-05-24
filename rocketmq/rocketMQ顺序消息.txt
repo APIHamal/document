@@ -1,0 +1,76 @@
+###RocketMQ支持顺序消息
+1)顺序消息原理(RocketMQ只支持局部有序而非全局有序)
+                       Topic(Broker)
+               ----------------------------
+               |   --------------------   |
+               |  |   Message Queue    |  |
+            (a)|   --------------------   |
+          |----|   --------------------   |
+-------   | (b)|  |   Message Queue    |  |
+|a|b|c|---|----|   --------------------   |
+-------   | (c)|   --------------------   |
+          |----|  |   Message Queue    |  |
+               |   --------------------   |
+               ----------------------------
+RocketMQ种每一个Topic是由多个MsaageQueue组成(默认是8个类似于KafaKa种的Partion分区概念)
+注意:顺序消息是指部分有序(MessageQueue这个维度上)而不是整个Broker种有序
+默认情况下例如上图种(a)(b)(c)三个消息会分别发送到同一个Topic种的不同的MessageQueue种
+所以为了保证消息在同一个topic种有序要确保将消息发送到同一个MessageQueue中即可
+因此Producer的发送过程需要做到以下两点
+1)必须将需要顺序执行的消息发送到同一个MessageQueue中
+2)发送的过程必须是同步的(异步的发送可能会打乱原有的顺序)
+###顺序消息生产者示例代码
+public class OrderProducer {
+    public static void main(String[] args) throws MQClientException {
+        DefaultMQProducer defaultMQProducer = new DefaultMQProducer("mainGroup");
+        defaultMQProducer.setNamesrvAddr("192.168.168.168:9876");
+        defaultMQProducer.start();
+        for(int index = 0;index<10;index++){
+            try {
+                Message message = new Message("orderMessage",("测试顺序消息"+index).getBytes("UTF-8"));
+				###顺序消息生产者关键代码在于
+				producer.send(message,MessageQueueSelector,args);
+				1)message表示的是要发送的消息
+				2)MessageQueueSelector表示一个选择MessageQueue策略其中关键点是
+				  其select方法中的最后一个object元素是send方法传递进去的
+				####此代码表示用于发送到第一个MessageQueue中(通常不是这么做)
+                defaultMQProducer.send(message, new MessageQueueSelector() {
+                    public MessageQueue select(List<MessageQueue> list, Message message, Object o) {
+						###实际上这里的参数(Object)o就是10
+						Integer args = (Integer)o;
+						###args == 10
+                        return list.get(0);
+                    }
+                },new Integer(10));
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+        defaultMQProducer.shutdown();
+    }
+}
+###顺序消息消费者代码实例(关键点在于监听使用MessageListenerOrderly对象即可)
+public class OrderConsumer {
+    public static void main(String[] args) throws Exception{
+        DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("mainGroup");
+        consumer.setNamesrvAddr("192.168.168.168:9876");
+        consumer.subscribe("orderMessage","*");
+		consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET);
+        consumer.registerMessageListener(new MessageListenerOrderly() {
+            public ConsumeOrderlyStatus consumeMessage(List<MessageExt> list, ConsumeOrderlyContext consumeOrderlyContext) {
+                for(MessageExt messageExt : list){
+                    try {
+                        System.out.println("接收消息  "+new String(messageExt.getBody(),"UTF-8"));
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+                }
+                return ConsumeOrderlyStatus.SUCCESS;
+            }
+        });
+        consumer.start();
+
+    }
+}
+
+

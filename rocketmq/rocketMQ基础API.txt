@@ -1,0 +1,77 @@
+###RocketMQ生产者支持3种发送方式
+1)同步发送:producer往broker发送消息并且等待broker的响应
+2)异步发送:producer往broker发送消息后立即返回等待回调代码执行
+3)单向发送:producer往broker发送消息后立即返回无论成功或者失败
+###效率问题
+1)同步发送效率最低但是一旦成功返回就表示消息发送成功并且不会丢失(安全性最高)
+2)异步发送、单向发送效率最高但是安全性最低(异步模式下producer可能永远等不到返回)
+###同步发送的代码如下
+public class Procedure {
+    public static void main(String[] args) throws Exception {
+        DefaultMQProducer defaultMQProducer = new DefaultMQProducer("mainGroup");
+        defaultMQProducer.setNamesrvAddr("192.168.168.168:9876");
+        defaultMQProducer.start();
+        for(int index = 0;index < 1000000;index++){
+            try{
+                Message firstMessage = new Message("topic2","Tag1","hello rocket".getBytes("UTF-8"));
+                SendResult sendResult = defaultMQProducer.send(firstMessage);
+                System.out.println(sendResult);
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+        defaultMQProducer.shutdown();
+    }
+}
+
+
+###RocketMQ消费者支出两种模式
+1)推模式:Push模式(等待Broker将消息推送到客户端然后客户端执行回调代码)
+2)拉模式:Pull模式(主动去询问broker)
+###消费端代码如下(Push模式)
+public class Consumer{
+    public static void main(String[] args) throws MQClientException {
+        DefaultMQPushConsumer defaultMQPushConsumer = new DefaultMQPushConsumer("mainGroup");
+        defaultMQPushConsumer.setNamesrvAddr("192.168.168.168:9876");
+        defaultMQPushConsumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET);
+        defaultMQPushConsumer.subscribe("topic2","*");
+        defaultMQPushConsumer.registerMessageListener(new MessageListenerConcurrently() {
+            public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> list, ConsumeConcurrentlyContext consumeConcurrentlyContext) {
+                if(!list.isEmpty()){
+                    MessageExt ext = list.get(0);
+                    try {
+                        System.out.println("内容  "+new String(ext.getBody(),"UTF-8"));
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+                }
+                return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+            }
+        });
+        defaultMQPushConsumer.start();
+    }
+}
+###消费端代码如下(Pull模式)
+public class PullConsumer {
+    public static void main(String[] args) throws Exception {
+        DefaultLitePullConsumer defaultLitePullConsumer = new DefaultLitePullConsumer("test1");
+        defaultLitePullConsumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET);
+        defaultLitePullConsumer.setNamesrvAddr("192.168.168.168:9876");
+        defaultLitePullConsumer.subscribe("topic2","*");
+        defaultLitePullConsumer.start();
+        try{
+            while(true){
+                List<MessageExt> extList = defaultLitePullConsumer.poll();
+                if(extList.isEmpty()){
+                    defaultLitePullConsumer.shutdown();
+                    break;
+                }else{
+                    MessageExt messageExt = extList.get(0);
+                    System.out.println("拉取消息"+new String(messageExt.getBody(),"UTF-8"));
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+}
