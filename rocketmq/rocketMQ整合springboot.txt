@@ -1,94 +1,101 @@
-###SpringBoot整合RocketMQ
+#####SpringBoot整合RocketMQ
 1)springboot和rocketmq的起步依赖
 <dependency>
 	<groupId>org.apache.rocketmq</groupId>
 	<artifactId>rocketmq-spring-boot-starter</artifactId>
 	<version>2.2.0</version>
 </dependency>
-2)整合后的关键点在于RocketMQTemplate(类似于RedisTemplate的相关作用)
-###封装发送普通消息和事务消息
-@Component
-public class RocketMqService {
+2)RocketMQ整合Springboot后主要使用到的对象是RocketMQTemplate(类似于RedisTemplate的相关作用)
+###注意:事务消息再整合后其监听器(RocketMQLocalTransactionListener与RocketMQTemplate相互绑定)
+   因此如果需要有多个事务消息需要处理则需要自己继承(RocketMQTemplate对象)后使用自定义的
+   RocketMQTemplate对象发送消息并将注解@RocketMQTransactionListener中的rocketMQTemplateBeanName
+   与自定义的RocketMQTemplate对象进行绑定
+3)RocketMQ整合springboot需要使用的配置(rocketmq.producer.group必须配置否则无法正常运行)
+rocketmq:
+  name-server: 192.168.168.168:9876
+  producer:
+    group: mainGroup
+#####相关使用到的代码
+1)封装RocketMQ基本的发送普通消息事务消息顺序消息
+@Service
+public class RocketMQServiceImpl implements RocketMQService {
     @Autowired
-    /**
-     * 发送消息到指定的topic
-     * @param topic
-     * @param content
-     */
-    public void sendMessage(String topic, String content){
-		###setHeader本质上就是设置自定义的属性
-        Message<String> message = MessageBuilder.withPayload(content).build();
-        rocketMQTemplate.send(topic, message);
-    }
-
-    /**
-     * 发送事务消息
-     * @param topic
-     * @param content
-     */
-    public void sendTransactionMessage(String topic, String content){
-		###setHeader本质上就是设置自定义的属性
-        Message<String> message = MessageBuilder.withPayload(content).
-                setHeader("index",1).
-                setHeader("name","李正鹏")
+    @Qualifier("rocketMQTemplate")
+    private RocketMQTemplate rocketMQTemplate;
+    ####发送普通消息到broker
+	@Override
+    public void sendMessage(String topic, String message) {
+        Message<String> payloadMessage = MessageBuilder.withPayload(message)
                 .build();
-        rocketMQTemplate.sendMessageInTransaction(topic,message,-1);
+        rocketMQTemplate.send(topic,payloadMessage);
     }
-}
-###封装消息消费者
-@Component
-@RocketMQMessageListener(consumerGroup = "mainGroup",topic = "topic1",consumeMode = ConsumeMode.CONCURRENTLY)
-public class CustomConsumer implements RocketMQListener<String> {
-    /**
-     * 接收消息时进行调用
-     * @param s
-     */
+	####发送事务消息到broker
     @Override
-    public void onMessage(String s) {
-        System.out.println("接收到消息--->"+s);
+    public void sendMessageInTransaction(String topic, String message) {
+        Message<String> payloadMessage = MessageBuilder.withPayload(message)
+                .build();
+        rocketMQTemplate.sendMessageInTransaction(topic,payloadMessage,-1);
+    }
+	####发送顺序消息到broker中
+    @Override
+    public void sendOrderMessage(String topic, String message, String hashText) throws InterruptedException, RemotingException, MQClientException, MQBrokerException {
+        ####这里使用了原生的RocketMQ客户端来发送顺序消息
+		org.apache.rocketmq.common.message.Message origin = new org.apache.rocketmq.common.message.Message(topic,message.getBytes());
+        rocketMQTemplate.getProducer().send(origin, new MessageQueueSelector() {
+            @Override
+            public MessageQueue select(List<MessageQueue> list, org.apache.rocketmq.common.message.Message message, Object o) {
+                Integer index = (Integer)0;
+                return list.get(index);
+            }
+        },0);
     }
 }
-###封装事务消息监听器
-@RocketMQTransactionListener
-public class CustomTransactionListener implements RocketMQLocalTransactionListener {
-    /**
-     * 发送Half包后broker返回响应后进行调用
-     * @param message
-     * @param o
-     * @return
-     */
+2)封装RocketMQ中通用的消费者对象(@RocketMQMessageListener与RocketMQListener是重要的点)
+@Component
+@RocketMQMessageListener(consumerGroup = "boot_group",topic = "boot_topic",consumeMode = ConsumeMode.CONCURRENTLY)
+public class ConsumerListener implements RocketMQListener<String> {
+
+    @Override
+    public void onMessage(String message) {
+        System.out.println("boot消费者接收到消息-->"+message);
+    }
+}
+3)本地事务处理监听器(rocketMQTemplateBeanName必须与对应的RocketMQTemplate对象绑定否则不能正常工作)
+@RocketMQTransactionListener(rocketMQTemplateBeanName = "rocketMQTemplate")
+public class TransactionListener implements RocketMQLocalTransactionListener {
     @Override
     public RocketMQLocalTransactionState executeLocalTransaction(Message message, Object o) {
-        System.out.println("进入了事务执行");
+        System.out.println("进入了默认的本地事务处理");
         return RocketMQLocalTransactionState.COMMIT;
     }
-    /**
-     * 本地事务指定失败或者unknow响应时broker进行回调
-     * @param message
-     * @return
-     */
     @Override
     public RocketMQLocalTransactionState checkLocalTransaction(Message message) {
-        System.out.println("进入了事务检查");
         return RocketMQLocalTransactionState.COMMIT;
     }
 }
-###Controller中调用Service进行RocketMQ消息的示例代码
-@RestController
-public class TestController {
-    @Autowired
-    private RocketMqService rocketMqService;
-
-    @GetMapping(value = "/send")
-    public String sendMessage(String topic,String message){
-        rocketMqService.sendMessage(topic, message);
-        return "发送成功";
+4)当需要多个本地事务处理器时需要扩展RocketMQTemplate对象然后再事务监听器中绑定该对象
+###扩展RocketMQTemplate对象时必须使用注解@ExtRocketMQTemplateConfiguration否则报错
+@ExtRocketMQTemplateConfiguration
+public class RocketMQTemplateExt extends RocketMQTemplate {
+}
+###将该事务处理器与该对象进行绑定
+@RocketMQTransactionListener(rocketMQTemplateBeanName = "rocketMQTemplateExt")
+public class TransactionListenerExt implements RocketMQLocalTransactionListener {
+    ###broker接收到half包后回送确认消息到客户端后调用该方法执行本地事务
+	@Override
+    public RocketMQLocalTransactionState executeLocalTransaction(Message message, Object o) {
+        System.out.println("进入了扩展的事务处理");
+        return RocketMQLocalTransactionState.COMMIT;
     }
-
-    @GetMapping(value = "/trans")
-    public String sendTransMessage(String topic,String message){
-        rocketMqService.sendTransactionMessage(topic, message);
-        return "发送成功";
+	###broker未接收到commit或者rollback消息时会定期调用检查本地事务接口
+    @Override
+    public RocketMQLocalTransactionState checkLocalTransaction(Message message) {
+        return RocketMQLocalTransactionState.COMMIT;
     }
 }
+
+
+
+
+
 
