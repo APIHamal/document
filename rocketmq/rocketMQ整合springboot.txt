@@ -1,0 +1,94 @@
+###SpringBoot整合RocketMQ
+1)springboot和rocketmq的起步依赖
+<dependency>
+	<groupId>org.apache.rocketmq</groupId>
+	<artifactId>rocketmq-spring-boot-starter</artifactId>
+	<version>2.2.0</version>
+</dependency>
+2)整合后的关键点在于RocketMQTemplate(类似于RedisTemplate的相关作用)
+###封装发送普通消息和事务消息
+@Component
+public class RocketMqService {
+    @Autowired
+    /**
+     * 发送消息到指定的topic
+     * @param topic
+     * @param content
+     */
+    public void sendMessage(String topic, String content){
+		###setHeader本质上就是设置自定义的属性
+        Message<String> message = MessageBuilder.withPayload(content).build();
+        rocketMQTemplate.send(topic, message);
+    }
+
+    /**
+     * 发送事务消息
+     * @param topic
+     * @param content
+     */
+    public void sendTransactionMessage(String topic, String content){
+		###setHeader本质上就是设置自定义的属性
+        Message<String> message = MessageBuilder.withPayload(content).
+                setHeader("index",1).
+                setHeader("name","李正鹏")
+                .build();
+        rocketMQTemplate.sendMessageInTransaction(topic,message,-1);
+    }
+}
+###封装消息消费者
+@Component
+@RocketMQMessageListener(consumerGroup = "mainGroup",topic = "topic1",consumeMode = ConsumeMode.CONCURRENTLY)
+public class CustomConsumer implements RocketMQListener<String> {
+    /**
+     * 接收消息时进行调用
+     * @param s
+     */
+    @Override
+    public void onMessage(String s) {
+        System.out.println("接收到消息--->"+s);
+    }
+}
+###封装事务消息监听器
+@RocketMQTransactionListener
+public class CustomTransactionListener implements RocketMQLocalTransactionListener {
+    /**
+     * 发送Half包后broker返回响应后进行调用
+     * @param message
+     * @param o
+     * @return
+     */
+    @Override
+    public RocketMQLocalTransactionState executeLocalTransaction(Message message, Object o) {
+        System.out.println("进入了事务执行");
+        return RocketMQLocalTransactionState.COMMIT;
+    }
+    /**
+     * 本地事务指定失败或者unknow响应时broker进行回调
+     * @param message
+     * @return
+     */
+    @Override
+    public RocketMQLocalTransactionState checkLocalTransaction(Message message) {
+        System.out.println("进入了事务检查");
+        return RocketMQLocalTransactionState.COMMIT;
+    }
+}
+###Controller中调用Service进行RocketMQ消息的示例代码
+@RestController
+public class TestController {
+    @Autowired
+    private RocketMqService rocketMqService;
+
+    @GetMapping(value = "/send")
+    public String sendMessage(String topic,String message){
+        rocketMqService.sendMessage(topic, message);
+        return "发送成功";
+    }
+
+    @GetMapping(value = "/trans")
+    public String sendTransMessage(String topic,String message){
+        rocketMqService.sendTransactionMessage(topic, message);
+        return "发送成功";
+    }
+}
+

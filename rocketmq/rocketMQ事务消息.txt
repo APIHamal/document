@@ -1,0 +1,65 @@
+###RocketMQ事务消息基本流程(RocketMQ事务消息仅与Producer有关与Consumer[消费者]无关系)
+1)client向broker发送消息(此时其实是发送半包消息[half消息])
+2)broker收到half消息后暂存并不会立即将该half消息推送给consumer进行消费
+  此时broker回送确认消息(表示接收到了客户端的half消息)
+3)客户端接收到broker回送的确认消息后执行本地事务处理并回送事务处理状态(提交、回滚、未知[commit|rollback|unknow])
+###如果回送事务状态为commit则broker会将该消息推送到consumer进行消费
+###如果回送事务状态为rollback则broker会直接丢弃该消息
+###如果未回送状态或者回送unknow状态则broker会进入后期本地事务的检查
+4)如果步骤(3)中客户端回送事务消息为commit或rollback并且该消息被broker成功接收
+  则整个事务消息处理结束,如果消息未被broker成功接收或者回送unknow状态
+  则broker会进行等待15秒后重新检查
+5)broker超时未收到步骤(3)的本地事务执行结果时会进行本地事务的检查,重复(3)(5)两个步骤
+  直到达到重试次数15次后broker直接丢弃消息
+###RocketMQ事务消息处理代码
+public class RocketmqTransactionProducer {
+    public static void main(String[] args) throws Exception {
+		###事务消息需要使用TransactionMQProducer(普通消息使用DefaultMQProducer对象即可)
+        TransactionMQProducer transactionMQProducer = new TransactionMQProducer("trans");
+        transactionMQProducer.setNamesrvAddr("192.168.168.168:9876");
+        transactionMQProducer.setExecutorService(Executors.newFixedThreadPool(10));
+        transactionMQProducer.setTransactionListener(new TransactionListener() {
+			###客户端half消息被broker接收后broker回送消息到达客户端后会调用该方法进行本地事务处理
+            public LocalTransactionState executeLocalTransaction(Message message, Object o) {
+                return LocalTransactionState.COMMIT_MESSAGE;
+            }
+			###本地事务执行返回unknow或者消息传送到broker丢失时broker会定期检查事务执行结果(回调该方法进行检查)
+            public LocalTransactionState checkLocalTransaction(MessageExt messageExt) {
+                return LocalTransactionState.COMMIT_MESSAGE;
+            }
+        });
+        transactionMQProducer.start();
+        for(int index = 1;index <= 10;index++){
+            try {
+                Message message = new Message("trans_topic","trans_test",("索引"+index).getBytes("UTF-8"));
+				###RocketMq事务消息需要调用sendMessageInTransaction方法
+                TransactionSendResult sendResult = transactionMQProducer.sendMessageInTransaction(message,-1);
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+        transactionMQProducer.shutdown();
+    }
+}
+###RocketMQ事务消息消费者(事务消息与消费者无紧密联系)
+public class Consumer{
+    public static void main(String[] args) throws MQClientException {
+        DefaultMQPushConsumer defaultMQPushConsumer = new DefaultMQPushConsumer("trans_consumer");
+        defaultMQPushConsumer.setNamesrvAddr("192.168.168.168:9876");
+        defaultMQPushConsumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET);
+        defaultMQPushConsumer.subscribe("trans_topic","*");
+        defaultMQPushConsumer.registerMessageListener(new MessageListenerConcurrently() {
+            public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> list, ConsumeConcurrentlyContext consumeConcurrentlyContext) {
+                for(MessageExt messageExt : list){
+                    try {
+                        System.out.println("事务消息内容-->"+new String(messageExt.getBody(),"UTF-8"));
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+                }
+                return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+            }
+        });
+        defaultMQPushConsumer.start();
+    }
+}
