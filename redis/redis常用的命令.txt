@@ -1,0 +1,86 @@
+#####Redis服务实例相关命令
+1)redis-server redis.conf
+  该命令用来启动redis服务
+2)redis-cli shutdown
+  该命令用来停止当前的redis服务器(默认情况下如果当前实例没有开启AOF持久化则执行shutdown命令
+  时会自动执行bgsave命令来生成快照文件)
+3)redis-cli -h host -p port
+  该命令用来连接远程的redis服务器
+#####Redis常用的全局命令
+1)type key
+  该命令用来查看redis键对外展示的数据类型(字符串|列表|哈希|集合|有序集合等)
+2)object encoding
+  该命令用来查看redis键使用的底层的数据结构(ziplist|linkedlist等)
+3)keys *
+  该命令列出当前数据库中所有的键(注意redis是单线程如果数据库键过多此方法会造成长时间的阻塞生产环境不能使用)
+4)dbsize
+  该命令列出当前数据库中键的数量(直接读取常量时间复杂度为o生产环境也可使用)
+5)exists key
+  判断键是否存在(如果存在则返回1否则返回0)
+6)expire key second
+  设置键的过期时间
+7)incr|decr
+  命令对不存在的键操作时都会创建新的键并设置其值为0(从0开始自增或者自减)
+#####字符串类型常用的命令
+1)set key value [ex second][px second][nx|xx]
+  该命令用来设置字符串
+  ex|px设置字符串的过期时间
+  nx表示键不存在时才进行设置(新增操作)
+  xx表示只有键存在时才设置(更新操作)
+#####列表的相关操作(Redis中索引都是从0开始)
+1)lrange list [start end]
+  该命令获取列表中指定返回内的数据(索引从0开始)包含start和end元素自身
+2)lindex list index
+  该命令获取列表中指定位置元素(索引从0开始)
+3)lrem list count value
+  该命令删除列表中的指定的元素
+  count大于0表示从左侧开始查找并且删除count个元素
+  count小于0表示从右侧开始查找并且删除count个元素
+  count等于0则删除所有相等的元素
+4)ltrim list start end
+  修剪列表元素该命令只保留列表中start到end之间的元素(包含start和end)
+  例如:ltrim list 0 -1
+       则保留所有的元素不变
+	   ltrim list 0 0
+	   则只保留列表中的第一个元素
+#####集合的相关操作
+1)scard set
+  该命令用来统计集合中的元素的数量
+2)spop set
+  该命令随机从集合中弹出元素(元素弹出后不存在集合中了)
+3)srandmember set [count]
+  该命令随机从集合中返回指定个数的元素[count不写则默认返回一个]
+  srandmember与spop的差别是spop会删除元素但是srandmember不会删除元素
+4)scan命令
+  生产环境中使用keys命令可能会造成长时间的阻塞(redis是单线程)
+  因此需要使用scan来渐进式遍历键
+  scan cursor match pattern count count type type
+  例如:
+  scan 0 match say* count 100
+  此命令查询所有以say开始的键并且每次取100条数据
+  scan命令返回的第一条记录为下次查询时的游标
+####数据库管理相关功能
+1)flushdb|flushall
+  flushdb和flushall都是用于清空数据库的内容区别是flushdb只会清空当前
+  所在的数据库(redis默认有16个数据库)flushall会清空所有的数据库内容
+  即删除0至15号数据库所有的内容
+####Redis持久化选项
+1)save命令阻塞的方式生成RDB(快照文件)
+  缺点:无法做到实时并且会阻塞redis
+2)bgsave命令会创建一个子进程然后生成快照文件
+  相当于对save命令的优化
+  缺点:相对于save命令会阻塞redis主进程bgsave开启子进程需要耗费资源
+3)bgrewriteaof命令会重新生成AOF文件
+  开启AOF持久化后redis会将所有对数据库产生影响的命令写入到aof文件中
+  如果redis运行的时间很久则可能存在AOF文件过大的问题
+  之后如果redis重启按照AOF重新加载数据可能会花费很长的时间
+  bgrewriteaof命令会依照当前数据库中的数据情况重新生成AOF文件
+  该操作生成的文件可能会大大减少(特别是如果之前保存了很多的键但是
+  最后大部分的键被删除了)
+  ###bgrewriteaof命令也可以自动触发
+  1)auto-aof-rewrite-min-size:重写aof文件时aof文件必须要达到的大小(默认是64MB)
+  2)auto-aof-rewrite-percentage:当前aof文件的大小与上一次重写后aof文件大小的比值
+  #RDB与AOF文件恢复
+  1)开启AOF并且AOF文件存在则使用AOF文件恢复
+  2)未开启AOF如果RDB文件存在则使用RDB文件恢复
+  3)同时开启AOF并且AOF和RDB同时存在优先使用AOF文件进行恢复
