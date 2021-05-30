@@ -21,6 +21,10 @@
   设置键的过期时间
 7)incr|decr
   命令对不存在的键操作时都会创建新的键并设置其值为0(从0开始自增或者自减)
+8)flushdb|flushall
+  flushdb和flushall都是用于清空数据库的内容区别是flushdb只会清空当前
+  所在的数据库(redis默认有16个数据库)flushall会清空所有的数据库内容
+  即删除0至15号数据库所有的内容
 #####字符串类型常用的命令
 1)set key value [ex second][px second][nx|xx]
   该命令用来设置字符串
@@ -59,11 +63,51 @@
   scan 0 match say* count 100
   此命令查询所有以say开始的键并且每次取100条数据
   scan命令返回的第一条记录为下次查询时的游标
+#####有序集合相关操作
+1)zadd setName score key score key
+  该命令用户向有序集合中增加元素
+2)zscore set key
+  该命令用于显示成员在集合内的分数
+3)zrank set key
+  该命令用于显示当前成员在集合中的排名(默认是返回升序排列的排名)  
+4)zrevrank set key
+  该命令用于显示成员在当前集合中按照倒叙排列时的排名
+5)zrange key min max withsocres
+  该命令升序显示指定排名的元素包含min和max自身并且加上withscores则
+  同时返回元素的分数
+  min是指起始的排名默认从0开始
+  max是指结束的排名
+  例如:
+	zrange sort_table 0 9
+	该命令用于查询有序集合sort_table中第一名和第十名
+6)zrevrange set min max withscores
+  该命令用户显示倒叙排列时的排名包含min和max自身数据
+  加上withscores则同时返回元素的分数
+7)zrem set key
+  该命令用户删除集合中指定的元素
+8)zincrby set increment key
+  该命令用户将有序集合中的元素增加指定的分数
+  如果集合中指定的元素不存在则默认添加并且设置分数为0
+9)zremrangebyrank set start end
+  该命令用户删除指定排名的元素(顺序的排名)
+  zremrangebyrank set 0 9
+  该命令用户删除有序集合set中(升序排列)第一名和第十名的元素
+10)zremrangebyscore set min max
+  该命令用户删除有序集合中小于指定分数的元素
+  例如:
+  zremrangebyscore set -inf 250
+  该命令用于删除集合中所有小于250的分数(包含250)的元素
+  zremrangebyscore set -inf 250)
+  该命令用户删除有序接种小于250的元素(不包括250自身)
 ####数据库管理相关功能
-1)flushdb|flushall
-  flushdb和flushall都是用于清空数据库的内容区别是flushdb只会清空当前
-  所在的数据库(redis默认有16个数据库)flushall会清空所有的数据库内容
-  即删除0至15号数据库所有的内容
+9)zcard set
+  该命令用于返回有序集合中元素的数量
+10)zinterstore dest set1 set2 [weights weight1 weight2] [aggregate sum|min|max]
+   zunionstore dest set1 set2 [weights weight1 weight2] [aggregate sum|min|max]
+   zdiffstore dest set1 set2 
+   ###交集和并集进行操作时集合中每个元素都可以乘以weight(权重)
+   aggregate是指保存到目标集合中时使用(sum|min|max)中的哪一个
+   作为元素的分数
 ####Redis持久化选项
 1)save命令阻塞的方式生成RDB(快照文件)
   缺点:无法做到实时并且会阻塞redis
