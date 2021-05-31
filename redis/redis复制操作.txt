@@ -1,0 +1,74 @@
+#####redis复制操作
+1)slaveof host por
+  该命令用于设置当前redis实例的master节点
+  例如:slaveof 192.168.168.169 6379
+  redis启动后将开始同步169服务器的数据
+2)slaveof no one
+  该命令断开当前redis服务的同步操作
+  ###注意:slaveof no one操作不会清除当前redis服务器的数据
+3)requirepass password
+  该命令设置当前redis实例连接的密码
+  当客户端或者slave节点连接到当前服务器时需要进行认证操作
+  普通的客户端使用auth password进行连接的认证
+4)masterauth password
+  该命令用户slave同步master节点时的认证操作
+  如果master节点配置了requirepass则slave进行连接时需要配置masterauth进行验证
+5)info replication
+  该命令用户查看当前的同步情况
+6)repl-timeout second(秒为单位)
+  该命令用来控制复制过程的超时时间(master节点认为发送完RDB快照文件即同步完成)
+  如果master节点的数据量相对很大则发送RDB文件会耗时很久
+  在repl-timeout指定的秒内未发送成功RDB文件则master会关闭连接停止复制过程
+  因此可以适当的调增该值
+7)client-output-buffer-limit slave 256m 64m 60
+  该命令用于设置复制客户端输出缓冲区的大小
+  slave和master复制开始时master会开始生成RDB文件并且继续响应其他客户端的请求
+  此时对于请求命令master会同时写入到客户端的输出缓冲区和[复制积压缓冲区]
+  当slave节点完成RDB文件的加载后master会将客户端缓冲区的内容发送此时slave与master
+  节点的数据基本处于一致的状态
+  #####[客户端缓冲区]和[复制积压缓冲区]区别
+  1)客户端缓冲区是redis节点临时保存暂未发送给客户端的内存(client list中omem即该缓冲区实际大小)
+    复制过程开始到RDB被成功发送到slave时这个期间的命令都会写到slave的客户端缓冲区待
+	RDB发送成功后继续发送
+  2)复制积压缓冲区(FIFO队列)的作用是为了slave和master的部分复制做准备(部分复制只有在网络出现分区或者网络
+    不稳定等丢失了部分命令后并且复制偏移量位于复制积压缓冲区中才会起作用)
+	复制积压缓冲区是一个大小为1MB的内存空间
+	当slave请求同步时master节点会创建该缓冲空间并同时将请求的命令写入到该空间中
+	master节点保存写偏移量(repl-offset)[info replication可查看]
+	slave节点保存复制偏移量(repl-offset)
+	###复制情况良好时两个偏移量应该相等
+	   如果因为网络等原因造成slave和master节点通信暂时丢失(无论master和slave重启都会部分复制失败进行全量同步)
+	   一段时间后slave重新连接到master发现master节点的run_id与之前相同则发送自己的复制偏移量到master
+	   此时master可以判断是继续执行部分复制还是全量复制
+	   原理:
+	   master有写偏移量
+	   slave有复制偏移量
+	   复制积压缓冲区的大小固定
+	   如果master写偏移量-复制积压缓冲区>=slave复制偏移量
+	   则可以判断通信丢失的这段时间内master写入的命令都存在因此可以继续发送
+	   否则表示部分写入的命令已经丢失因此必须重新进行全量同步数据操作
+#####redis复制的过程和原理
+!!!redis的run_id发生改变就会发生一次全量复制
+1)全量复制
+  slave与master首次进行的同步均为全量同步操作
+2)部分复制
+  #redis的运行ID
+  redis启动时会自动分配一个运行ID[info server]进行查看
+  每次redis启动时该ID标示均不同
+  #redis的写偏移量和复制偏移量
+  master会记录当前写入命令的偏移量
+  slave会记录但当前复制命令的偏移量
+  同步情况良好时两个偏移量应该相等
+  #复制积压缓存区
+  主从同步开始时master节点会创建该空间并将接收到的命令
+  记录到该缓冲区(默认为1MB的空间)相当于记录最近写入的命令
+  由于该空间只有1MB的FIFO队列
+  因此随着时间的推移会不断的更新内容
+3)部分复制原理
+  复制积压缓冲区大小已知
+  master节点写偏移量已知
+  slave节点复制偏移量已知
+  master写偏移量-复制积压缓冲区大小(缓冲区实际使用量相当于list的size属性)=最早进入缓冲区命令的偏移量
+  如果最早进入队列的命令的偏移量小于slave节点的复制偏移量
+  则表示通信异常的这段时间内的命令都存在可以部分复制
+  否则进行全量复制

@@ -1,0 +1,60 @@
+#####Redis序列化协议
+1)redis协议格式
+*paramCount\r\n
+$paramByteLength\r\n
+command\r\n
+例如:set hello world
+*3\r\n
+$3\r\n
+set\r\n
+$5\r\n
+hello\r\n
+$5\r\n
+world\r\n
+#####发送redis数据相关Java代码
+public class CustomRedisClient {
+    private static final String CRLF = "\r\n";
+    /**
+     * 根据Redis相关协议规范组装成redis可识别的命令
+     * @param command
+     * @return
+     */
+    public static byte[] buildCommand(String command){
+        StringBuilder stringBuilder = new StringBuilder();
+        String[] commandArray = command.split(" ");
+        stringBuilder.append("*").append(commandArray.length).append(CRLF);
+        for(String commandItem : commandArray){
+            stringBuilder.append("$").append(commandItem.length()).append(CRLF);
+            stringBuilder.append(commandItem).append(CRLF);
+        }
+        return stringBuilder.toString().getBytes(Charset.forName("UTF-8"));
+    }
+}
+#####Jedis连接池相关使用
+public class JedisPollExample {
+    public static void main(String[] args) {
+        GenericObjectPoolConfig genericObjectPoolConfig = new GenericObjectPoolConfig();
+        //设置jedis连接的最大数量
+        genericObjectPoolConfig.setMaxTotal(36);
+        //设置jedis最大空闲连接的数量
+        genericObjectPoolConfig.setMaxIdle(16);
+        //设置jedis最小空闲连接数量
+        genericObjectPoolConfig.setMinIdle(8);
+        //设置连接池没有可用的jedis连接后客户端最大等待时间
+        genericObjectPoolConfig.setMaxWaitMillis(3000);
+        JedisPool jedisPool = new JedisPool(genericObjectPoolConfig, "192.168.168.169", 6379);
+        Jedis client = jedisPool.getResource();
+        //Pipeline流水线的相关操作
+        Pipeline pipeline = client.pipelined();
+        pipeline.set("hello","world");
+        pipeline.incrBy("hot_num",1);
+        pipeline.incrBy("age",-1);
+        //执行命令
+        List<Object> execResult = pipeline.syncAndReturnAll();
+        for(Object text : execResult){
+            System.out.println(text);
+        }
+        client.close();
+        jedisPool.close();
+    }
+}
