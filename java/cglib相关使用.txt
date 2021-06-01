@@ -1,0 +1,55 @@
+###CGLIB代理主要涉及的对象Enhancer和MethodInterceptor对象
+1)setInterceptDuringConstruction(boolean)
+  该方法用来设置当创建对象时构造函数中调用了某个被拦截的方法
+  是否启用拦截默认为true表示该方法即使是在初始化时被构造函数
+  调用也进行拦截操作
+2)setCallback(Callback)
+  该方法用来设置方法拦截器
+3)setCallbacks(new Callback[]{MethodInterceptor})
+  该方法用来设置多个拦截器
+4)setCallbackFilter(CallbackFilter)
+  该方法用来设置当存在多个拦截器时返回其中哪个方法拦截器
+  进行处理当前的方法调用
+###方法调用代码示例
+1)基本使用方法
+Enhancer enhancer = new Enhancer();
+enhancer.setSuperclass(Hello.class);
+enhancer.setCallback(NoOp.INSTANCE);
+Hello hello = (Hello) enhancer.create();
+2)存在多个Callback拦截并根据方法名返回不用的拦截器
+Enhancer enhancer = new Enhancer();
+enhancer.setSuperclass(Hello.class);
+enhancer.setInterceptDuringConstruction(false);
+###传入Callback[]数组输入多个拦截器
+enhancer.setCallbacks(new Callback[]{
+	###第一个拦截器对象
+	new MethodInterceptor() {
+		@Override
+		public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
+			System.out.println("第一个拦截器");
+			###methodProxy.invokeSuper(proxy,args)进行方法调用
+			###注意如果不进行invokeSuper调用则实际代码等于没有执行
+			return methodProxy.invokeSuper(o, objects);
+		}
+	},
+	###第二个拦截器对象
+	new MethodInterceptor() {
+		@Override
+		public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
+			System.out.println("第一个拦截器");
+			return methodProxy.invokeSuper(o, objects);
+		}
+	}
+});
+###CallbackFilter对象返回的int索引代表使用那个Callback对象对当前方法调用进行拦截
+enhancer.setCallbackFilter(new CallbackFilter() {
+	@Override
+	public int accept(Method method) {
+		String methodName = method.getName();
+		if(methodName.indexOf("select") >= 0){
+			return 0;
+		}
+		return 1;
+	}
+});
+Hello hello = (Hello) enhancer.create();
