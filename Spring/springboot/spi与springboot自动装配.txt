@@ -1,0 +1,54 @@
+###Spring的SPI机制与SpringBoot的自动装配
+SPI与自动装配原理基础Spring相关资源
+1)META-INF/spring.factories文件
+2)SpringFactoriesLoader对象(SPI逻辑实现只要调用loadFactories[返回实例]或loadFactoryNames
+  则加载Classpath/*.jar中的/META-INF/spring.factories文件并将KEY-VALUE值进行添加到Map中)
+3)@Import注解的使用(自动注入value属性中的对象)
+4)ImportSelector接口的使用(返回类的全限定名会被Spring自动加载到容器)
+5)@Conditional*一系列的注解使用
+###SpringBoot自动装配原理
+1)@SpringBootApplication复核注解包含注解@EnableAutoConfiguration
+ 其中@EnableAutoConfiguration同样作为复合注解包含注解@Import({AutoConfigurationImportSelector.class})
+ AutoConfigurationImportSelector是自动装配的关键所在
+ ##@Import注解的作用是将对应的Class实例化并且注入到SpringIOC容器中(Class支持使用@Bean或者@Conditional*注解
+   来进行条件化的装配操作同样支持@Value等注解的使用)可以将@Import与@ComponentScan的扫包注入(@ComponentScan
+   注入时可使用的注解或条件装配@Import同样适用)进行类比
+ ##ImportSelector接口返回所有的类(返回类的全限定名)会被@Import注解进行实例化并且注入
+2)AutoConfigurationImportSelector类被加载后会使用SPI(SpringFactoriesLoader)加载
+  META-INF/spring.factories文件(该文件实际上是一个properties文件包含键值对)
+  EnableAutoConfiguration(全限定名org.springframework.boot.autoconfigure.EnableAutoConfiguration)
+  的所有实现类的(实际上返回List<String>对象然后由@Import负责加载到IOC容器)从而完成自动装配
+3)AutoConfigurationImportSelector(ImportSelector接口)返回的Class对象可以包含条件装配条件
+  例如:@ConditionalOnProperty(prefix="redis.ha.host")表示配置文件中配置了redis.ha.port属性时
+  才会实例化该对象(因此当该条件不被满足时@Import也不会将该对象注册到IOC容器中)从而完成了SpringBoot
+  的自动装配
+###自动装配的依赖关系
+ -------      -----------------------------------------------     ---------------------     -------------------------
+|@Import|--> |ImportSelector(AutoConfigurationImportSelector)|-->|SpringFactoriesLoader|-->|META-INF/spring.factories|
+ -------      -----------------------------------------------     ---------------------     -------------------------
+   ^                                                                       |
+   |---------返回KEY_VALUE(String,List<String>)然后交给@Import进行加载------
+###实现自动装配案例(配置JedisSentinelPool实现redis高可用以及自动故障转移)
+1)META-INF/spring.factories
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.lizhengpeng.auto.RedisHAClient
+2)自动装配类通常包含条件注解
+@Configuration
+###配置文件配置了属性redis.ha才进行实例化
+@ConditionalOnProperty(prefix = "redis.ha")
+public class RedisHAConfiguration {
+    ####读取application.yml中的配置
+    @Value("${redis.ha.master_name}")
+    private String masterName;
+	####读取application.yml中的配置
+    @Value("${redis.ha.addr_port}")
+    private String masterAddr;
+    ###返回JedisSentinelPool对象配置自动故障转移
+	@Bean
+	@ConditionalOnMissingBean(value = {JedisSentinelPool.class})
+    public JedisSentinelPool redisHaClient(){
+        Set<String> set = new HashSet<>();
+        set.add(masterAddr);
+        JedisSentinelPool sentinelPool = new JedisSentinelPool(masterName,set);
+        return sentinelPool;
+    }
+}
