@@ -1,3 +1,16 @@
+###SpringBoot条件注解
+1)@ConditionalOnClass(Class[]=value)
+  该类表示当前ClassPath中存在指定的class才进行装配
+2)ConditionalOnMissingClass
+  该类表示当前ClassPath中不存在指定的class才进行装配
+3)@ConditionalOnBean
+  该类表示当前Context中存在指定的Bean才进行装配
+4)@ConditionalOnMissingBean
+  该类表示当前Context中不存在指定的Bean才进行装配
+5)@ConditionalOnProperty(prefix="",mmatchIfMissing=true)
+  该类表示当前环境存在指定的配置才进行装配
+6)@ConditionalOnExpression
+  SpEL表达式返回true进行装配否则不进行装配
 ###Spring的SPI机制与SpringBoot的自动装配
 SPI与自动装配原理基础Spring相关资源
 1)META-INF/spring.factories文件
