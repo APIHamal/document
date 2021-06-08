@@ -1,0 +1,18 @@
+#sentinel默认的监听端口为26379(比redis-servre多20000)
+port 26379
+#sentinel默认以守护进程的形式运行
+daemonize yes
+#配置sentinel的输出日志文件名
+logfile "sentinel.log"
+#配置sentinel的工作目录(配置后日志也会输出到该路径)
+dir "/usr/local/redis-6.2.3"
+#监测指定的主从结构(mymaster为指定主从架构的名称2为sentinel投票的票数)
+sentinel monitor mymaster 192.168.168.168 6379 2
+#如果master节点配置了requirepass(设置了密码则要配置该选项)
+# sentinel auth-pass <master-name> <password>
+#指定的时间内sentinel未接受到master节点的回复消息则进行主观下线
+sentinel down-after-milliseconds mymaster 10000
+#sentinel进行故障转移后指定同时复制master节点的slave节点的数量
+#sentinel parallel-syncs <master-name> <numreplicas>
+#sentinel进行故障转移的超时时间如果该时间内未完成故障转移则此次故障转移失败待下次继续
+#sentinel failover-timeout <master-name> <milliseconds>

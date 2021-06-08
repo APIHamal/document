@@ -1,0 +1,69 @@
+###Sentinel(哨兵默认的监听端口是26379)的主要作用是保证redis主从复制的高可用性
+   当master节点宕机后sentinel之间会进行选举(注意:sentinel之间选举
+   是为了选择一个sentinel节点去处理故障转移)进行故障转移操作
+   重新再slave节点中选择出一个master节点(选择一个复制偏移量最大的节点)
+   选举master节点成功后会让其他的slave节点重新去复制该master节点
+   并且当之前发生宕机的master节点重新启动后会命令该节点去复制当前的master节点
+   ###sentinel sentinel.conf用于启动sentinel节点
+1)sentinel配置完成后会监测master节点
+2)sentinel节点之间相互通信
+3)当slave节点宕机时sentinel并不会进行处理
+4)redis搭建高可用主从节点最少需要3个sentinel节点(即1Master+2slave配置)
+5)一组sentinel节点可以同时监测多个redis主从集群(sentinel.conf中的sentinel monitor name ip addr Q[票数])
+  如果监测多组redis主从结构则name应该设置成不同的值并且每个sentinel节点的conf配置文件都应该相同
+###Sentinel搭建高可用CONF文件相关配置
+1)sentinel monitor redis-ms-name master_ip master_port Q
+  #redis-ms-name
+  sentinel可以同时监测多组redis-slave节点该属性给每组节点
+  定义一个别名(sentinel相关命令都需要依赖此名称)
+  #master_ip
+  定义每组redis节点中mater节点的IP地址
+  #master_port
+  定义每组节点中master节点的端口号(默认是6379)
+  #Q
+  该属性指票数当sentinel认为某个master节点宕机或失联后
+  会通知其他的sentinel节点来判断该节点是否宕机
+  如果超过Q个数量的sentinel节点认为该matser确实宕机或失联
+  则让该节点客观下线
+###主观下线
+   当sentinel在某段时间内未收到redis中master节点的pong消息则认为该master节点
+   宕机了或处于不可服务的状态此时该sentinel将该master节点主观下线(主观下线只是当前sentinel
+   自己的想法)
+###客观下线
+   sentinel发现master节点宕机后首先进行客观下线然后广播消息通知其他sentinel节点
+   判断该节点是否处于宕机等状态并进行投票如果超过Q个sentinel认为该master节点确实
+   不可达则整个sentinel集群客观下线该节点(客观下线发生了表示master节点确实宕机了)
+   否则客观下线失败
+2)sentinel down-after-milliseconds name 10000
+  设置指定时间内未接受到master节点的消息则认为master节点发生了宕机或者处于
+  不可达的状态(理论上这个时间较小则越能更快的发现master节点发生了宕机)
+3)logfile sentinel.log
+  该属性配置sentinel的输出日志文件的名称
+4)dir /usr/local/redis/
+  该属性配置sentinel日志文件的保存位置
+5)daemon yes
+  该属性配置sentinel节点处于后台运行(守护进程的方式运行)
+6)sentinel parallel-syncs name 1
+  该命令用于配置当sentinel进行故障转移后其他slave节点去复制当前
+  master节点时最多的slave节点的数量
+7)sentinel failover-timeout name 180000
+  该属性用于控制sentinel处理故障转移操作的超时时间如果在该时间内
+  故障转移未处理成功则此次故障转移失败并在下次重新开始故障转移
+###Sentinel涉及的相关命令
+1)sentinel masters
+  显示当前sentinel监测的主从架构中所有的主节点状态
+2)sentinel master name
+  显示当前sentinel监测的指定的名称(name)的主从架构中的
+  主节点状态和信息
+3)sentinel slaves name
+  显示当前sentinel监测的指定的名称(name)的主从结构中的
+  所有的从节点的信息
+4)sentinel sentinels name
+  展示监测指定名称(name)的主从机构的sentinel集合
+5)sentinel get-master-addr-by-name name
+  获取指定名称的主动结构中master节点的IP地址
+6)sentinel failover name
+  进行快速的故障转移指定名称的redis主从架构
+7)sentinel remove name
+  取消当前sentinel节点对指定名称的redis主从架构的监测
+  如果取消后发生故障等则不会自动进行故障转移
