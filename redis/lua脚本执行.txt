@@ -1,0 +1,50 @@
+###Redis与Lua脚本的执行
+1)eval command key个数 KEYS[1] KEYS[2] ARGV[1] ARGV[2]
+##Lua中数组的下标是从1开始
+  该命令直接执行lua脚本
+2)evalsha lua_sha key个数 KEYS[1] KEYS[2] ARGV[1] ARGV[2]
+  该命令用来执行已经加载到Redis中的lua脚本
+###Redis中管理lua脚本
+1)script load command[例如"return KEYS[1]..KEYS[2]"]
+  该命令用来加载指定的lua脚本(注意:不能直接加载lua脚本问价
+  必须以字符串的形式输出lua脚本)
+  例如:
+  redis-cli script load "$(cat /usr/local/redis/lua/limit.lua)"
+  该命令用来加载/usr/local/redis/lua目录下的脚本文件
+2)script exists sha1
+  该命令用来判断指定的lua脚本是否已经被加载完成
+  redis-cli script exists 6D37DC7DBDADC6AE6836861004C7BC61
+3)script flush
+  该命令用来清空所有已经被加载到redis服务器中的lua脚本文件
+4)script kill
+  该命令用来停止当前正在运行的lua脚本
+  例如当执行一个死循环的lua脚本时
+  locla index = 1;
+  while (true) do
+     index = index + 1;
+  end
+  当redis执行到该lua脚本时会造成死循环因此redis会发生阻塞
+  此时调用script kill会杀死该脚本的执行
+#####Lua脚本中调用redis的命令时必须要使用
+1)redis.call(command,KEYS[1],ARGV[1])
+  该命令执行时如果发生错误会中断lua脚本的执行并且直接返回错误
+2)redis.pcall(command,KEYS[1],ARGV[1])
+  该命令执行时如果发生失败会忽略错误并且继续执行脚本
+###实例Lua脚本用来控制客户端的限流操作(KEYS[1]设置key的组成前缀(例如IP:或SESSIONID:)ARGV[1]传入SESSIONID或IP地址用来进行限流操作)
+if not KEYS[1] or not ARGV[1] then
+    return false;
+end
+local prefix = "SESSION:";
+if KEYS[1] == "IP" then
+    prefix = "IP:";
+end
+local identify = prefix..ARGV[1];
+local clientFlow = redis.call("INCR",identify);
+if clientFlow == 1 then
+    redis.call("EXPIRE",identify,60);
+end
+if clientFlow <= 30 then
+    return true;
+else
+    return false;
+end
