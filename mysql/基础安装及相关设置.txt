@@ -1,0 +1,57 @@
+###MYSQL安装过程
+###MYSQL安装步骤以及依赖确实解决方案
+1)linux安装mysql时需要先删除mariadb或者mysql的依赖
+  rpm -qa|grep mysql
+  rpm -qa|grep mariadb
+##删除相关的依赖
+  例如:yum remove mariadb
+2)安装步骤依次为
+  mysql-community-common*
+  mysql-community-libs*
+  mysql-community-client*
+  mysql-community-server*
+##安装mysql-community-server*时可能会提示缺失依赖
+  yum -y install perl.x86_64
+  yum install -y libaio.x86_64
+  yum -y install net-tools.x86_64
+  
+###MYSQL安装完成后需要重新设置root用户密码
+1)myslq安装过程中会随机生成一个root密码(密码为乱码串)
+  因此在丢失root密码的情况下可以跳过mysql的安全检查
+  [my.cnf]-->[mysqld]中增加配置
+  skip-grant-tables
+  可以跳过mysql的安全检查因此无须密码就可以登录到mysql
+2)登录mysql后直接修改mysql.user表中user字段为root用户的密码
+  update mysql.user set 
+  authentication_string=password('abc123') where user='root';
+3)使用新创建的密码登录mysql服务器
+  mysql -h host -P port -u root -p
+4)root用户首次登录时mysql可能会要求用户修改密码
+  set password = password('root2021');
+##注意此时可能会提示密码的强度过低因此需要重新修改密码强度相关设置
+  set global validate_password_policy=0; #设置密码验证强度等级
+  set global validate_password_length=6;   #设置有效密码的最小长度
+##以上设置完成后可以重新设置当前用户的密码
+  set password = password('mysql2021');
+
+###MYSQL常用的运维命令
+1)mysql -h host -P port -u name -pass
+  host表示ip地址
+  port表示端口(-P[大写])
+  name用户名称
+  pass表示用户的密码
+2)select databases();
+  显示当前客户端选择的数据库名称
+3)desc table;
+  显示指定的表的字段名称的字段类型
+4)source /path/sql
+  使用source命令执行指定的SQL文件
+  
+###MYSQL多表更新SQL语法
+1)update a,b set a.name=b.name where a.id = b.id;
+  将a表中的name属性更新成与b表中相同
+2)update a inner join b on a.id = b.id set a.name=b.name,b.desc=a.desc;
+  将a表中的name属性更新成与b表中相同并且更新b表中的desc属性与a表相同
+###MYSQL中多表连接删除语法
+1)delete t1 from t1,t2 where t1.id=t2.id;
+  删除t1表中id与t2表中id相等的数据
