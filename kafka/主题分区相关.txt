@@ -1,0 +1,30 @@
+#####kafka主题相关命令
+1)kafka-topics.sh --zookeeper host:port/path --create --topic top_name --partitions num --replication-factor num
+  命令用于创建kafka的主题信息
+  --zookeeper指定zookeeper服务器的地址和chroot信息
+  --create用于指定创建主题信息
+  --topic用于设置创建的主题的名称
+  --partitions指定创建主题的分区数量
+  --replication-factor指定分区的复制因子
+  例如:
+  kafka-topics.sh --zookeeper 192.168.168.168:2181/kafka --create --topic test_topic --partitions 8 --replication-factor 3
+2)kafka-topics.sh --zookeeper host:port/path --list
+  命令用于显示当前kafka集群中可用的主题的信息
+  例如:
+  kafka-topics.sh --zookeeper 192.168.168.168:2181/kafka --list
+3)kafka-topics.sh --zookeeper host:port/path --describe --topic top_name
+  命令用于显示具体的主题的信息(分区数量副本数量)
+  例如:
+  kafka-topics.sh --zookeeper 192.168.168.168:2181/kafka --describe --topic test_topic
+3)kafka-topics.sh --zookeeper host:port/path --alter --topic top_name --partitions num --replication-factor num
+  命令用于修改kafka主题的相关配置信息
+  ###kafka当前只支持增加分区数量不支持减少分区数量
+  例如:
+  #kafka-topics.sh --zookeeper 192.168.168.168:2181/kafka --alter --top_name test_topic --partitions 10
+   该命令用来增加当前主题的分区数量
+  #kafka-topics.sh --zookeeper 192.168.168.168:2181/kafka --alter --top_name test_topic --partitions 10 -replication-factor 3
+   该命令用来增加主题的分区数量和修改主题当前的复制因子
+4)kafka-topics.sh --zookeeper host:port/path --delete --topic top_name
+  命令用于删除指定的主题数据(注意:删除主题的操作为不可逆的操作)
+  例如:
+  kafka-topics.sh --zookeeper 192.168.168.168:2181/kafka --delete --topic test_topic
