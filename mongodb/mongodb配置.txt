@@ -1,0 +1,30 @@
+#配置mongodb的进程管理方式
+processManagement:
+   fork: true #fork为true表示mongodb将以守护进程的方式运行
+#配置mongodb的网络配置
+net:
+   #bindIp配置mongodb的监听IP地址(0.0.0.0表示监听所有的网卡IP)
+   bindIp: 0.0.0.0
+   #配置mongodb的监听端口(27017为默认的监听端口)
+   port: 27017
+#配置mongodb的数据存储
+storage:
+   #指定MongoDB将存储其数据文件的位置
+   dbPath: /var/lib/mongo
+   #设置启用日记功能日志可以确保单实例写入持久性
+   journal:
+      enabled: true
+#配置mongodb的日志数据相关
+systemLog:
+   #destination为file表示将日志信息输出到文件中
+   #如果不配置此选项则mongodb会将消息输出到控制台中
+   destination: file
+   #path指定日志文件的位置
+   path: "/var/log/mongodb/mongod.log"
+   #logAppend默认为false(true表示追加日志默认情况下mongodb启动时会清除日志消息
+   #设置为true后则会不断地将日志内容追加到文件中)
+   #确保mongodb不会在服务器启动操作后覆盖现有的日志文件
+   logAppend: true
+#设置此选项以true启用MongoDB中的授权系统
+#security:
+#   authorization: enabled
