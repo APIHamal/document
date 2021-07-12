@@ -1,0 +1,90 @@
+#####mongodb安装环境
+1)通常将mongodb安装在unix/linux环境中因此在安装时应选择mongodb的tgz安装包(
+  本质上tgz包就是编译完成的tar.gz包)该tgz包与其他类型的软件安装相似解压到
+  指定的目录下即可
+2)配置mongodb的配置文件(mongodb默认情况下不包含配置文件需要自定义的配置)
+  然后使用mongod -f mongo.conf启动配置文件即可
+  ##注意:配置文件中需要创建保存数据的目录、存放日志文件的目录以及存放PID
+    文件的目录
+  至此单节点mongodb的环境已经搭建完成
+3)启动mongodb服务程序
+  ##mongod -f mongod.conf用于启动mongo服务程序
+
+#####mongodb常用的命令程序
+1)mongod -f mongod.conf
+  命令用于启动mongodb服务程序
+2)mongo --host host --port port
+  该命令用于连接到指定的mongodb服务器
+3)show dbs|show databases
+  该命令用于显示当前可用的mongodb数据库对象
+4)db
+  该命令用于显示当前正在使用的数据库对象
+5)use db
+  切换到指定命名的数据库对象
+6)show collections
+  显示当前数据库对象下所有的集合对象
+  #mongodb中的数据库概念同mysql相同
+  #mongodb中的集合概念类似mysql的表
+  #mongodb中的文档概念类似mysql的行记录
+  注意:use db切换时当数据库不存在时会自动进行创建(但是只是在内存中进行创
+  建只有当插入记录到数据库中的集合时或者创建了集合对象才会真正的创建数据
+  库[db.createCollection(name)用于显示的创建一个文档集合对象])
+7)db.createCollection(name)
+  该命令用于在数据库中显示的创建一个文档对象
+  #注意:并不存在db.dropCollection(name)方法用于删除文档集合对象[db.collection.drop()]
+  用于删除文档集合对象
+8)db.version()
+  该命令用于显示当前使用的mongodb的版本信息  
+9)db.collection.drop()
+  该方法用于删除指定的文档集合对象
+10)db.collection.insert({model})
+  该命令用于显示的添加文档对象到集合中
+  例如:
+  db.learn_db.insert({name:'lizhengpeng',age:20,sex:'男'})
+11)db.collection.insertMany[{model},{model}]
+   该命令用于向文档集合中添加多条数据
+   例如:
+   db.learn_db.insertMany([
+   {name:'aaa',sex:'man',age:100,address:'suzhou'},
+   {name:'bbb',sex:'women',age:100,address:'anhui'}
+   ])
+12)db.collection.find(filter,columnd,options)
+   该命令用于查询指定的文档集合中的数据
+   例如:
+   db.learn_db.find()
+   #命令返回文档集合中所有的文档数据
+   db.learn_db.find({name:'aaa'})
+   #返回文档集合中所有name字段为aaa的数据
+   db.learn_db.find({name:'aaa'},{name:1,age:1,_id:-1})
+   #返回文档集合中所有name为aaa的字段并且只显示name|age字段不显示sex字段
+   ###设置属性1表示显示对应的字段
+   ###设置属性0表示不显示对应的字段   
+   注意:默认情况下_id字段总是会返回(_id:0)表示不返回文档的_id字段
+13)db.collection.find().skip(skip_index).limit(limit_num)
+   该命令用于返回文档集合中指定起始位置和数量的文档数据(默认情况下返回文
+   档的数据按照物理顺序进行返回)
+   skip_index#表示返回数据的起始的位置
+   limit_num#控制返回文档数据的数量(skip与limit参数的结合相当于mysql中limit
+   关键字的用法)
+   例如:
+   db.learn_db.find().skip(1).limit(10)
+   该命令表示从第2条数据开始(1表示起始位置[包含该位置])返回指定数量的文档数据
+14)db.collection.find().sort({filter})
+   对指定的文档进行排序并且返回排序之后的数据
+   例如:
+   db.learn_db.find().sort({name:1,sex:-1})
+   该命令表示按照name进行升序(1表示升序-1表示降序)sex进行降序返回文档集合中的数据
+15)db.collection.update(filter,data,options)
+   该命令用于更新给定条件中的文档数据
+   注意:update命令默认只是更新一条数据(更新完成后立即返回)
+   例如:
+   db.learn_db.update({name:'aaa'},{"$set:{name:'aaa_modify'}})
+   该命令将符合条件的文档数据中的name属性全部更新为值aaa_modify
+16)db.collection.remove()
+   该命令用于删除指定的文档集合数据
+   例如:
+   db.learn_db.remove({name:'bbc'})
+   删除文档集合中name属性为bbc的文档
+   例如:
+   db.learn_db.remove({})
+   该命令用于整个集合中的文档数据
