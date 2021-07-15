@@ -1,0 +1,45 @@
+#####mongodb权限管理
+1)配置文件中(mongod.conf)
+  security:
+     authorization: enabled
+  表示启用mongodb的授权功能(默认情况下首次登录时admin用户尚未创建
+  因此应该关闭该注释待进入admin数据库后创建用户完成再启用该功能)
+2)首先创建管理员用户
+  #use admin切换到admin数据库
+  #db.createUser({
+	user:'admin',
+	pwd:'admin@123',
+	roles:[
+		{role:'clusterAdmin',db:'admin'},
+		{role:'dbAdminAnyDatabase',db:'admin'},
+		{role:'userAdminAnyDatabase',db:'admin'},
+		{role:'readWriteAnyDatabase',db:'admin'}
+	]
+  })
+3)对应的数据库创建管理者对象
+  #user app_db
+  #db.createUser({
+	user:'lizhengpeng',
+	pwd:'123456',
+	roles:[
+		{role:'dbOwner',db:'app_db'}
+	]
+  })
+4)授权认证相关命令
+  db.auth(user,password)
+  该命令用来对当前的数据库进行认证操作
+  #也可在登录时直接进行授权认证
+  mongo --host host --port port -u user -p password --authenticationDatabase=datase
+  --authenticationDatabase是对指定的数据库进行认证操作
+
+#####mongodb常用的角色说明
+[root]                 超级管理员拥有所有的权限
+[read]                 允许读取指定数据库的角色
+[readWrite]            允许读写指定数据库的角色
+[dbAdmin]              允许用户在指定的数据库中执行管理函数如创建索引等
+[userAdmin]            允许管理当前数据库的用户
+[dbOwner]              数据库的拥有者(最高拥有者)可以执行所有的操作
+[clusterAdmin]         集群最高管理员
+[dbAdminAnyDatabase]   允许管理所有的数据库
+[userAdminAnyDatabase] 允许管理所有的数据库用户
+[readWriteAnyDatabase] 允许读写所有的数据库
