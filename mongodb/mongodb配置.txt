@@ -28,6 +28,11 @@ systemLog:
    #设置为true后则会不断地将日志内容追加到文件中)
    #确保mongodb不会在服务器启动操作后覆盖现有的日志文件
    logAppend: true
-#设置此选项以true启用MongoDB中的授权系统
-#security:
-#   authorization: enabled
+#设置此选项以true启用MongoDB中的授权系统(首次登录时不应该设置此属性在创建授权用户
+ 再重新开启授权认证[db.auth(user,pwd)]进行授权认证)
+security:
+   authorization: enabled
+   keyFile: /usr/local/mongodb-linux-x86_64-rhel70-4.2.15-rc0/conf/mongo.key
+#设置当前mongodb副本集的名称该项配置在所有的副本集中必须全部相同
+replication:
+   replSetName: "mongodb_cluster"
