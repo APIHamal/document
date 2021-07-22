@@ -1,0 +1,15 @@
+#####nginx安装与配置(采用源码的方式安装)
+1)nginx源码方式安装依赖包
+  #nginx自身需要依赖一部分的lib库因此在安装nginx前需要确保系统中已经正确的安装依赖库
+  yum -y install gcc gcc-c++ autoconf automake make zlib zlib-devel pcre-devel pcre
+  注意:yum -y install与yum install区别
+  #通常情况下yum安装时会询问[is that ok?]来确认是否安装相关软件包使用yum -y install后会自动
+  进行安装不会再次询问
+2)下载nginx的源码包进行编译安装操作
+  #将nginx.1.14.1.tar.gz(或其他任何的版本)包进行解压操作(tar -xzvf nginx.1.14.1.tar.gz)
+  #进入nginx主目录(cd /usr/local/nginx.1.14.1)
+  #执行目录下configure脚本文件(./configure)脚本执行完成后会生成一些默认配置及默认目录
+  #使用make命令编译及安装(make && make install)
+  注意:编译成功后会生成/usr/local/nginx(该目录自动生成并且不携带版本号)目录
+3)进入/usr/local/nginx/sbin/目录下启动nginx(./nginx)启动完成后默认会监听当前机器的80端口
+  使用浏览器访问服务器80端口即可查看nginx是否安装成功

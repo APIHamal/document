@@ -31,6 +31,9 @@
   #也可在登录时直接进行授权认证
   mongo --host host --port port -u user -p password --authenticationDatabase=datase
   --authenticationDatabase是对指定的数据库进行认证操作
+5)删除指定的用户
+  db.dropUser(userInfo)
+  #删除指定的用户信息
 
 #####mongodb常用的角色说明
 [root]                 超级管理员拥有所有的权限

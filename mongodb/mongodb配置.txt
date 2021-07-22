@@ -8,6 +8,8 @@ net:
    bindIp: 0.0.0.0
    #配置mongodb的监听端口(27017为默认的监听端口)
    port: 27017
+   #wireObjectCheck开启mongodb数据写入校验[mongodb收到请求会先进行校验拒绝畸形或者无效的BSON数据写入]
+   wireObjectCheck: true
 #配置mongodb的数据存放的位置
 storage:
    #指定MongoDB将存储其数据文件的位置
@@ -31,8 +33,9 @@ systemLog:
 #设置此选项以true启用MongoDB中的授权系统(首次登录时不应该设置此属性在创建授权用户
  再重新开启授权认证[db.auth(user,pwd)]进行授权认证)
 security:
-   authorization: enabled
-   keyFile: /usr/local/mongodb-linux-x86_64-rhel70-4.2.15-rc0/conf/mongo.key
+   authorization: enabled #开启mongodb的认证
+   keyFile: /usr/local/mongodb-linux-x86_64-rhel70-4.2.15-rc0/conf/mongo.key #mongodb集群以及副本集之间通信的认证
+   javascriptEnabled: false #关闭mongodb服务器端执行javascript脚本代码的功能
 #设置当前mongodb副本集的名称该项配置在所有的副本集中必须全部相同
 replication:
    replSetName: "mongodb_cluster"
