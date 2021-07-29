@@ -1,0 +1,24 @@
+#####mongodb索引相关命令
+1)db.collection.createIndex(column_sort,index_options)
+  column_sort表示要建立索引的字段以及对应的排序
+	#[1]表示升序排列
+	#[-1]表示降序排列
+	例如:{name:1,age:-1}表示按照name升序并且age进行降序建立索引
+  index_options表示要建立的索引的相关元信息
+	#name表示当前建立索引的名称
+	#unique表示当前建立的索引是否为唯一索引
+	#background表示在后台线程建立索引
+	例如:{name:'name_age_index',unique:true}表示当前建立一个名称
+	为name_age_idnex的索引并且该索引还是一个唯一索引(不允许存在相同值)
+2)db.collection.getIndexes()
+  该命令用于获取当前集合中的索引信息
+  #ns属性显示当前命名空间(database.collection)
+  #name为当前的索引的名称
+  #key为当前的索引的详细信息(字段值以及其对应的升序/降序)
+3)db.collection.totalIndexSize()
+  该命令用来查看当前集合中索引所占空间的大小
+4)db.collection.dropIndex(index_name)
+  该命令用于删除当前集合中指定的索引
+  #参数index_name指集合中指定索引的名称
+5)db.collection.dropIndexes()
+  该命令用于删除当前集合中所有的索引
