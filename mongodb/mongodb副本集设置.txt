@@ -1,8 +1,19 @@
 #####mongodb与副本集相关的命令
 1)db.isMaster()
   该命令用来查看当前副本位于整个集群中的相关角色信息以及打印副本集群的相关信息
+  1)setName  [显示当前副本集的名称]
+  2)ismaster [判断当前节点是否是primary节点(true为主节点)false则表示为备节点]
+  3)primary  [显示当前副本集中的主节点的地址信息]  
 2)rs.status()
   该命令用来查看当前副本集的信息以及副本集中成员的相关信息
+  #rs.status()命令会列出当前副本集中所有节点的信息
+  1)health         [成员是否健康的标示通过心跳进行监测]
+  2)stateStr       [成员节点的状态primary表示主节点secondary表示备节点]
+  3)uptime         [成员节点的启动时间]
+  4)optime         [成员最后一条同步oplog的时间]
+  5)optimeDurable  [成员最后一条同步oplog(写入journal日志)的时间]
+  6)syncSourceHost [当前节点同步数据的来源]
+  
 
 #####mongodb副本集设置(注意:副本集搭建成功后会自动同步用户信息[因此在任意节点创建用户并赋权即可])
 1)mongodb中副本集相关角色的分类以及区别

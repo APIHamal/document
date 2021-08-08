@@ -88,3 +88,10 @@
    例如:
    db.learn_db.remove({})
    该命令用于整个集合中的文档数据
+17)db.shutdownServer()
+   关闭当前已经连接的mongodb服务
+18)kill -15 pid
+   关闭指定的mongodb服务实例
+   注意:不能使用kill -9强制停止mongodb服务的进程
+   使用kill -15会等待mongodb处理完必要的事情后再停止
+   mongodb服务进程
