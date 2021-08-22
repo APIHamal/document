@@ -16,9 +16,12 @@ storage:
    dbPath: /var/lib/mongodb/data
    #指定当前mongodb使用的存储引擎
    engine: wiredTiger
+   #控制引擎执行checkPoint操作的时间间隔(可理解成刷新linux中页缓存到磁盘时间间隔s)
+   syncPeriodSecs: 60(默认60s进行一次checkPoint操作)
    #设置是否启用journal日志的功能
    journal:
-      enabled: true
+      enabled: true #journal相当于redo日志的作用崩溃是做故障恢复
+	  commitIntervalMs: 100 #控制journal日志的刷盘间隔时间(默认是100ms)
 #配置mongodb的日志数据相关
 systemLog:
    #destination为file表示将日志信息输出到文件中
