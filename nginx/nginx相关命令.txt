@@ -1,0 +1,21 @@
+###nginx相关命令
+1)nginx -v
+  该命令显示当前nginx的版本信息
+2)nginx -V
+  该命令显示当前nginx的版本信息和编译参数配置
+3)nginx -t
+  进行配置文件的语法检查测试配置文件的有效性
+4)nginx -T
+  进行配置文件的语法检查测试配置文件的有效性同时输出有效配置内容
+5)nginx -s
+  发送信号给nginx的主进程信号通常有以下4种
+  #nginx -s stop
+   快速停止nginx服务器
+  #nginx -s quit
+   安全的停止nginx服务器
+  #nginx -s reload
+   启动一个新的workProcess(工作进程)并且关闭一个旧工作进程
+6)nginx -p
+ 指定nginx的工作目录默认为config时的安装目录
+7)nginx -c
+ 指定nginx的配置文件的位置默认为conf/nginx.conf的文件

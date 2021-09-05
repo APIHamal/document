@@ -1,0 +1,132 @@
+#设置nginx的全局域名解析器
+#域名解析器可以解析[upstream]中的域名并进行缓存
+#valid表示DNS缓存更新时间(达到该时间后会进行更新)
+#默认情况下nginx会同时查找ipv4与ipv6的地址(ipv6=off可以关闭ipv6地址查找)
+resolver 10.10.10.10 valid=30s ipv6=off;
+#配置域名解析的超时时间
+resolver_timeout 10s;
+
+#配置nginx工作进程的数量通常应该设置成与cpu核心数量相同
+#[number]具体的数量例如(worker_processes 8;表示创建8个工作进程)
+#[auto]表示由nginx自动设置(nginx会将数量设置成cpu核心数)
+worker_processes  auto;
+
+#设置nginx的工作进程优先级
+#通常情况下进程优先级越高cpu分配的时间片越多(优先级取值范围[-20,19]数字越小优先级越高)
+worker_priority -5;
+
+#设置工作进程与CPU的亲缘性使工作进程与CPU进行绑定
+#指令值为auto时由nginx自动的进行绑定(该属性只能在linux和FreeBSD中使用)
+worker_cpu_affinity auto;
+
+#设置nginx的错误日志
+error_log  logs/error.log  info;
+
+#nginx事件模型处理相关配置
+events {
+	#设置每个nginx工作进程可处理并发连接的最大数
+    worker_connections  1024;
+}
+
+#配置http相关的服务
+http {
+	#引入MIME媒体类型的映射文件(nginx根据文件名后缀寻找对应的MIME媒体类型)
+	#对应的值会被添加到[content-type]响应头部中
+    include		mime.types;
+    default_type  application/octet-stream;
+	
+	#http请求头读取的超时时间(指定时间内未读取完则表示超时[默认是60s(秒为单位)])
+	client_header_timeout 10s;
+	
+	#http请求体的读取超时时间(默认为60s)
+	client_body_timeout 10s;
+	
+	#设置HTTP请求体的最大值(默认为1M)
+	#当请求头中(content-length)超过该设定的值时直接返回HTTP状态码[408]
+	#当设置值为[0]时表示没有限制
+	#当上传大文件时该值需要被修改否则文件无法上传成功
+	client_max_body_size	5m;
+	
+	#开启零拷贝的特性可以提高静态资源的处理能力
+    sendfile		on;
+	
+	#tcp连接内持续没有数据传输的最大时间超过这个时间连接将被关闭(默认是75S[秒为单位])
+    keepalive_timeout  60;
+	
+	#配置虚拟服务器(server指令相当于一个虚拟的服务器[实际上就是监听指定的端口])
+    server {
+		#配置监听的ServerSocket套接字的端口
+		#*:80表示监听任意IP地址的80端口(192.168.168.168:80表示只监听访问192.168.168.168的80请求)
+		#reuseport开启套接字分片的功能可以避免发起大量tcp短链接时产生惊群效应
+		#rcvbuf表示socket接收缓冲区的大小默认为8k当接收的数据量较大时可适当调整
+		#sndbuf表示socket发送缓冲区的大小默认为8k当发送数据量比较大时可适当调整
+        listen		*:80 reuseport rcvbuf=8k sndbuf=8k;
+		#配置转发的主机名(对应与http请求头中的host属性)
+        server_name  lizhengpeng.com;
+		
+		#常规的IP限制配置样例
+		#指只允许ip地址为192.168.168.0-192.168.168.168.24网段的IP方式
+		allow 192.168.168.0/24;
+		#指不允许除[allow]配置外的IP地址进行访问
+		deny all;
+		
+		###配置url的匹配规则
+		##URL具备如下常用匹配规则
+		#  [=|~|~*|@]统称为修饰符
+		#  1)location /images/ 
+		#	表示无修饰符(无修饰符匹配时表示以path开始的路径都被匹配)
+		#	因此上述表示所有以/images/开始的路径都会被匹配
+		#  2)location = /images/
+		#    精确匹配表示只有url为/images/时才进入该匹配
+		#  3)location ~ /images/.*(注意该表达式区分大小写)
+		#    正则表达式匹配
+		#	表示路径符合正则表达式/images/.*时进入匹配
+		#	!!!注意该模式区分大小写
+		#  4)location ~* /images/(正则表达式匹配并且不分区大小写)
+		#	正则表示匹配表示符合正则表达式会进入匹配
+		#    !!!注意该模式不区分大小写
+		#  5)location @ /images/
+		#    内部路径配置
+		#	定义一个转发路径可在nginx内部进行转发
+		###配置root与alias区别
+		##root配置的是根目录
+		##alias相当于设置目录的一个别名
+		#1)location /static/ {
+		#	root /usr/local/server;
+		#	#该配置相当于查询/static/目录下文件时实际上会在目录 
+		#	#/usr/local/server/static下进行文件的查找
+		#}
+		#2)location /static/ {
+		#	alias /usr/local/static/;
+		#	#该配置相当于查询/static/目录下文件时实际上会在目录
+		#	#/usr/local/static/下进行查找
+		#}
+		
+        location / {
+            root   /usr/local/web-server;
+			#index指令用来配置默认的首页文件的文件名(存在多个时依次进行查找)
+            index  index.html index.htm;
+        }
+    }
+	
+	#开启nginx的http功能的支持
+    #server {
+    #    listen       443 ssl;
+    #    server_name  localhost;
+	
+    #    ssl_certificate      cert.pem;
+    #    ssl_certificate_key  cert.key;
+
+    #    ssl_session_cache    shared:SSL:1m;
+    #    ssl_session_timeout  5m;
+
+    #    ssl_ciphers  HIGH:!aNULL:!MD5;
+    #    ssl_prefer_server_ciphers  on;
+
+    #    location / {
+    #        root   html;
+    #        index  index.html index.htm;
+    #    }
+    #}
+
+}
