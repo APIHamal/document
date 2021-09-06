@@ -2,9 +2,9 @@
 #域名解析器可以解析[upstream]中的域名并进行缓存
 #valid表示DNS缓存更新时间(达到该时间后会进行更新)
 #默认情况下nginx会同时查找ipv4与ipv6的地址(ipv6=off可以关闭ipv6地址查找)
-resolver 10.10.10.10 valid=30s ipv6=off;
+#resolver 10.10.10.10 valid=30s ipv6=off;
 #配置域名解析的超时时间
-resolver_timeout 10s;
+#resolver_timeout 10s;
 
 #配置nginx工作进程的数量通常应该设置成与cpu核心数量相同
 #[number]具体的数量例如(worker_processes 8;表示创建8个工作进程)
@@ -48,7 +48,9 @@ http {
 	client_max_body_size	5m;
 	
 	#开启零拷贝的特性可以提高静态资源的处理能力
-    sendfile		on;
+    sendfile	on;
+	#启用最小传输限制功能
+	tcp_nopush	on;
 	
 	#tcp连接内持续没有数据传输的最大时间超过这个时间连接将被关闭(默认是75S[秒为单位])
     keepalive_timeout  60;
@@ -102,31 +104,62 @@ http {
 		#	#/usr/local/static/下进行查找
 		#}
 		
+		#搭建nginx文件下载环境
+		location /download/ {
+			#配置nginx文件的下载路径
+			root /usr/local/web-server/download;
+			#强制nginx下载文件时输出MIME类型为二进制文件类型
+			types {}
+			default_type application/octet-stream;
+			#添加响应头部使nginx进行文件的下载
+			add_header content-disposition: 'attachment';
+			#限制文件下载速度为1M
+			limit_rate 1m;
+			#当客户端下载速度达到2M时进入限速模式
+			limit_rate_after 2m;
+			#客户端引发传输超时的时间
+			send_timeout 20s;
+		}
+		
+		#默认的路由匹配规则
         location / {
-            root   /usr/local/web-server;
+		    #配置web服务的根目录位置
+            #root   /usr/local/web-server;
 			#index指令用来配置默认的首页文件的文件名(存在多个时依次进行查找)
-            index  index.html index.htm;
+            #index  index.html index.htm;
+			
+			#开启HTTPS功能时如果访问80端口则强制跳转使用HTTPS
+			#[$1]表示引用(regex)中的内容相当于正则表达式的引用
+			rewrite ^/(.*) https://$host$1 permanent;
         }
     }
 	
 	#开启nginx的http功能的支持
-    #server {
-    #    listen       443 ssl;
-    #    server_name  localhost;
+    server {
+		#表示启用SSL功能支持(推荐使用[listen 443 ssl reuseport;]开启SSL支持)
+		#ssl on;
 	
-    #    ssl_certificate      cert.pem;
-    #    ssl_certificate_key  cert.key;
-
-    #    ssl_session_cache    shared:SSL:1m;
-    #    ssl_session_timeout  5m;
-
-    #    ssl_ciphers  HIGH:!aNULL:!MD5;
-    #    ssl_prefer_server_ciphers  on;
-
-    #    location / {
-    #        root   html;
-    #        index  index.html index.htm;
-    #    }
-    #}
+	    #https默认的监听端口
+        listen       443 ssl;
+        server_name  lizhengpeng.com;
+		
+		#配置SSL证书的文件(证书包含站点CA[签发机构]以及数字签名和公钥信息)
+        ssl_certificate		    ca/server.crt;
+		#配置证书公钥对应的私钥文件
+        ssl_certificate_key		ca/server.key;
+		#配置站点证书私钥密码的文件
+		#生成私钥文件时可以选择是否输入密码
+		#如果输入密码则此文件存放生成私钥时的密码
+		#ssl_password_file password_file;
+		
+		#配置SSL缓存以及超时时间
+        ssl_session_cache    shared:SSL:1m;
+        ssl_session_timeout  5m;
+		
+        location / {
+            root   html;
+            index  index.html index.htm;
+        }
+    }
 
 }

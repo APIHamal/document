@@ -2,6 +2,7 @@
 1)nginx源码方式安装依赖包
   #nginx自身需要依赖一部分的lib库因此在安装nginx前需要确保系统中已经正确的安装依赖库
   yum -y install gcc gcc-c++ autoconf automake make zlib zlib-devel pcre-devel pcre
+  注意如果需要使用HTTPS则需要安装[openssl openssl-devel]依赖(yum -y install openssl openssl-devel) 
   注意:yum -y install与yum install区别
   #通常情况下yum安装时会询问[is that ok?]来确认是否安装相关软件包使用yum -y install后会自动
   进行安装不会再次询问
@@ -9,7 +10,23 @@
   #将nginx.1.14.1.tar.gz(或其他任何的版本)包进行解压操作(tar -xzvf nginx.1.14.1.tar.gz)
   #进入nginx主目录(cd /usr/local/nginx.1.14.1)
   #执行目录下configure脚本文件(./configure)脚本执行完成后会生成一些默认配置及默认目录
+   注意:默认情况下nginx不包含SSL模块因此如果需要使用HTTPS则要开启该模块
+   [./configure --with-http_stub_status_module --with-http_ssl_module]
+   使用以上命令编译时加载SSL模块
   #使用make命令编译及安装(make && make install)
   注意:编译成功后会生成/usr/local/nginx(该目录自动生成并且不携带版本号)目录
 3)进入/usr/local/nginx/sbin/目录下启动nginx(./nginx)启动完成后默认会监听当前机器的80端口
   使用浏览器访问服务器80端口即可查看nginx是否安装成功
+  
+#####openSSL生成自签名证书的简单步骤
+1)使用RSA算法生成一个私钥
+  openssl genrsa -out server.key 2048
+2)使用当前私钥生成一个SSL证书
+  openssl req -new -x509 -days 365 -key server.key -out server.crt
+  #[Country  Name]       表示国家[CN]即可
+  #[Province Name]       表示省份任意填写(suzhou)
+  #[Locality Name]       表示地区任意填写(suzhou)
+  #[Organization Name]   组织名称任意填写(idealist)
+  #[Organizational Unit] 组织名称任意填写(idealist)
+  #[Common Name]		 表示域名(重要)[lizhengpeng.com]
+  #[Email Address]       邮箱地址任意填写
