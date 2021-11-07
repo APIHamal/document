@@ -1,0 +1,61 @@
+#####ES安装步骤[操作系统层面](es7.0开始jdk必须是1.8以上版本)
+1)首先创建非root用户(es不允许以root用户进行启动)
+  #创建指定的用户组和用户(可跳过)
+	groupadd elastic(创建用户组)
+	useradd -g elastic elastic
+	#切换到root用户并且给elastic用户设置密码
+	passwd elastic
+  #将es程序所有者切换至创建的新用户
+	chown elastic:elastic elastic-search-7.10
+2)配置部分linux操作系统的命令
+  ##修改最大文件数和锁内存限制
+  ##打开/etc/security/limits.conf增加或者修改如下选项(elastic代表启动ElasticSearch服务的用户)
+  ##soft代表警告的设定(可超过)hard代表严格设定(不允许超过该值)
+	elastic - hard nproc unlimited (用户可创建的最大线程数量)
+	elastic - soft nproc unlimited (用户可创建的最大线程数量)
+	elastic - nofile 262144        (每个进程可打开的最大的文件数量[文件描述符数量])
+	elastic - memlock unlimited    (内存锁定相关)
+	elastic - fsize unlimited      (可打开的最大文件大小[例如1GB])
+	elastic - as unlimited         (进程可使用的地址空间的限制)
+  ##更改一个进程能拥有的最大内存区域限制
+  ##打开/etc/sysctl.conf增加或者修改如下选项
+	vm.max_map_count=262144        (包含限制一个进程可以拥有的VMA(虚拟内存区域)的数量)
+	vm.swappiness=1				   (表示禁用交换区[值为1时非正常非紧急情况下不会使用到交换区])
+   ##执行命令(重新加载上面设置的系统参数)
+	sysctl vm.max_map_count
+	sysctl -p
+  ##修改用户最大线程数(默认普通用户最多进程默认是1024个而root不做限制)
+  ##打开/etc/security/limits.d/90-nproc.conf文件增加或者修改如下选项
+    ****注意:centos7下[修改不生效]应该修改[/etc/systemd/system.conf]
+		**DefaultLimitNOFILE=655350
+		**DefaultLimitNPROC=655350
+	* soft nproc unlimited
+	root soft nproc unlimited
+
+###ES配置文件相关配置解释(elasticsearch.yml)
+  #es集群的名称各个节点必须配置相同的名称才能加入到集群中
+  #配置了相同集群名称的es节点自动形成集群不需要人工干预
+  cluster.name: es-lzp-cluster
+  #es集群中当前节点的名称(不配置则es启动时默认生成)
+  node.name: es-168
+  #设置es的数据存储位置(配置后如果升级es则会很方便)
+  path.data: /var/lib/es-data/data
+  #设置es的日志存储位置
+  path.logs: /var/lib/es-data/logs
+  #配置当前es服务的监听地址(一旦配置了地址则es切换到生产模式)
+  network.host: 192.168.168.168
+  #配置es进行http的restful端口
+  http.port: 9200
+  #配置es集群发现的主机地址(种子节点列表)
+  #端口号不配置则默认9300(discovery.seed_hosts: ["192.168.168.168:9300","192.168.168.169:9400"])
+  discovery.seed_hosts: ["192.168.168.168","192.168.168.169","192.168.168.170"]
+  #配置es集群初始化时进行选举操作的候选节点(集群初始化时将在候选节点中进行选举操作)
+  #配置该参数的用途相当于准备让列出的节点参与主节点的选举
+  #如果集群中还有其他节点但是未列出则不会选举成为主节点(候选节点都不是无法成为主节点)
+  cluster.initial_master_nodes: ["es-168","es-169","es-170"]
+  
+###JVM相关配置(jvm.options)
+  #生产环境下(Xms|Xmm)[配置JVM堆大小]配置的堆大小必须相同否则会报错
+  #Xmx不允许超过[32GB]为了安全起见可配置成[24GB]
+  -Xms512m
+  -Xmx512m
