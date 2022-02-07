@@ -1,0 +1,34 @@
+###solr安装目录相关介绍
+#bin
+ ##solr相关的启动脚本
+#contrib
+ ##社区贡献的代码尚未被合并到solr
+#dist
+ ##solr编译后的jar文件
+#docs
+ ##solr相关的API文档
+#example
+ ##solr导入数据的相关示例
+#licenses
+ ##solr相关的授权文件
+#server[solr内置的web应用程序(jetty相关的文件)]
+ 1)solr-web
+   solr的webapp应用程序包含solrAdmin等后台管理程序
+ 2)solr(solrHome[重要的目录])
+   |--solr.xml solrHome下的配置文件
+   |--coer目录(相关的core目录数据)
+   |  |--conf(core详细配置目录)
+   |  |  |---schema.xml     (core的schema文件)
+   |  |  |---solrconfig.xml (core的索引创建缓存配置文件)
+   |  |--data(core数据目录)
+   |  |  |---index          (索引数据文件)
+   |  |  |---log            (日志文件)   
+   |--core.properties       (core生成后solr自动创建的属性信息文件)
+
+###solr基础命令(solr默认基于jetty监听端口8983)
+-solr start
+ ##启动solr服务
+-solr stop
+ ##停止当前solr服务器
+-solr restart
+ ##重启当前的solr服务
