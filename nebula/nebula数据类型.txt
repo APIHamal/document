@@ -1,0 +1,54 @@
+###nebula常见数据类型
+1)数值类型
+  #整型数字有int8|int16|int32|int64分别代表不同范围的整型数字
+  -相当于java中的byte|short|int|long
+  -其中创建类型时默认指定int则指代int64的数字类型
+  !!!*int64*可作为SPACE的VID的类型
+  EX:
+  -CREATE SPACE plus(vid_type=int64)
+  -CREATE SPACE plus(vid_type=fixed_string(32))
+  EX:
+  -CREATE TAG student(class int,age int8);
+  -CREATE EDGE score(score int16);
+  #浮点数类型有float|double分别代表单精度浮点数与双精度浮点数
+  EX:
+  -CREATE TAG geo(x float, y float)
+  -CREATE TAG slary(slary double);
+2)布尔类型
+  #布尔类型bool代表true或者false
+  EX:
+  CREATE EDGE active(status bool);
+3)字符串类型
+  #字符串分为定长字符串和边长字符串
+  -[string]             代表的是可变长度的字符串
+  -[fixed_string(size)] 代表定长的字符串
+  EX:
+  -CREATE TAG student(name string)
+  -CREATE TAG person(id_card fixed_string(18))
+4)NULL
+  NULL代表一个不存在的值同SQL中的NULL的概念和意义相同
+  -[IS NULL]     用于判断一个属性的值是否为NULL
+  -[IS NOT NULL] 用于判断一个属性的值是否非NULL
+  EX:
+  -CREATE TAG student(name string not null)
+  创建TAG或EDGE时可以限制属性的值不允许为NULL
+5)日期时间类型DATE|TIME|DATETIME|TIMESTAMP
+  #[DATE]      日期类型存储时不包含时间
+  #[TIME]      时间类型存储时不包含日期
+  #[DATETIME]  日期时间类型
+  #[TIMESTAMP] 时间戳类型
+  !!!Nebula存储时间日期类型数据时均会根据配置文件中的timezone_name参数转为标准UTC时间
+  EX:
+  -[date()]      函数用于获取当前的日期
+  -[time()]      函数用于获取当前的时间
+  -[datetime()]  函数用于当前的日期时间
+  -[timestamp()] 获取当前的时间戳
+  -CREATE TAG class(open datetime not null)
+  -CREATE EDGE create_at(at timestamp)
+6)列表类型(类似编程语言中的数组)
+  列表允许元素重复并且可以通过下标直接访问列表中的数据索引位置从0开始
+  #[M]    返回列表中M下标的元素(下标从0开始计算)
+  #[M..N] 返回列表中下标>=M并且<N的元素
+  #[M..]  返回列表中下标>=M的元素
+  #[..M]  返回列表中下标<M的元素
+  !!!注意[*M]的操作返回的均返回不包括M位置的元素(相当于[M..N))

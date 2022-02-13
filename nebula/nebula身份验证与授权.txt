@@ -1,0 +1,46 @@
+###nebula身份验证与授权
+1)nebula身份认证
+ #nebula默认情况下不会开启身份验证可以使用root用户名和任意密码连接nebula
+ #nebula支持两种身份验证
+ -本地身份验证(本地身份验证是指在服务器本地存储用户名、加密密码，当用户尝试访问 Nebula Graph 时，将进行身份验证)
+ -STEP:
+ (1)编辑配置文件nebula-graphd.conf(默认目录为/usr/local/nebula/etc/)设置--enable_authorize=true并保存退出
+    ###开启身份验证后默认的God角色账号为root密码为nebula
+ (2)重启nebula的整个服务
+    ###nebula.service restart all
+2)LDAP验证
+ #OpenLDAP是轻型目录访问协议(LDAP的开)源实现可以实现账号集中管理
+ -LDAP验证目前只支持企业版
+###nebula用户管理(开启身份认证后可以进行用户管理[开启认证后默认GOD权限用户为root密码为nebula])
+1)创建用户(目前只允许GOD角色执行[默认root:nebula])
+  -CREATE USER user PASSWORD 'pass'
+  EX:
+  -CREATE USER lizhengpeng PASSWORD 'lizhengpeng'
+2)授权用户(将指定图空间的内置角色权限授予用户[当前仅God角色和Admin角色用户可以进行此操作])
+  -GRANT ROLE <role,role> on <space> TO user
+  EX:
+  -GRANT ROLE admin ON plus TO lizhengpeng
+3)查看用户当前角色
+  -SHOW ROLES IN space
+  EX:
+  -SHOW ROLES IN plus  
+4)修改用户的密码(GOD用户执行)
+  -ALTER USER name WITH PASSWORD 'password'
+  EX:
+  -ALTER USER lizhengpeng WITH PASSWORD 'lizhengpeng'
+5)查看当前的所有用户
+  -SHOW USERS
+  EX:
+  -SHOW USERS
+6)删除指定的用户
+  -DROP USER name
+  EX:
+  -DROP USER lizhengpeng
+###nebula常用的内置角色(授权角色需要使用GOD或ADMIN角色用户)
+1)God(超级用户类似linux中的root用户)
+  -不支持手动授权God角色只能使用默认God角色用户root
+2)Admin(图空间存在读写权限并可以对其他用户授权)
+  -Admin角色可以先由God进行授权
+3)User(只能读写不可以对其他用户授权)
+  -图空间内的schema只读权限
+  -图空间的数据读写的权限

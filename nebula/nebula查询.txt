@@ -1,0 +1,61 @@
+###nebula查询语法
+1)管道符|组合查询
+ nebula中使用<|>表示管道符类似linux等脚本中管道符的作用
+ 将前一个查询的结果输出作为管道符后面nGQL语句的输入
+ -|可以将多个查询进行连接组合成一个复杂查询
+ EX:
+ -GO FROM "player01" OVER flow YIELD properties($$).name as name,flow.score as score |
+  GROUP BY $-.name YIELD $-.name as student_name, sum(score) as total_score
+ #该例子使用管道符操作进行分组
+2)引用属性(用户可以在WHERE或YIELD中引用点或者边的属性)
+  EX:$^.<tag_name>.<prop_name>
+  -tag_name  点的TAG
+  -prop_name 点对应TAG的属性
+  ###只能在nGQL中GO语句中使用###
+  -[$^]        引用起始点
+  -[$-]        引用上一个管道符中使用[AS]自定义别名的变量
+  -[$$]        引用终止点
+  -[edge._src] 边的起始点(返回VID)
+  -[edge._dst] 边的终止点(返回VID)
+###MATCH语句(MATCH与LOOKUP需要在建立索引的情况下才可以使用)
+1)MATCH (v:TAG) return v
+  返回指定TAG图节点
+  EX:
+  -MATCHA (s:student) RETURN s
+  -返回所有的学生节点
+2)MATCHA (V:TAG) WHERE ~ RETURN V
+  返回节点并进行过滤
+  EX:
+  -MATCH (s:student) WHERE s.age <= 20 RETURN s
+  -返回所有年龄小于20的学生节点
+3)MATCHA (v:TAG) WHERE {id(v)==|id(v) in []} RETURN v
+  返回指定VID的节点
+  EX:
+  -MATCH (s:student) WHERE id(s) == "student1" RETURN s
+  -MATCH (s:student) WHERE id(s) in ["student1","student2"] RETURN s
+4)MATCHA (V:TAG) WHERE ~ --(v2) RETURN V
+  #--        任意无方向的边
+  #-->       出边
+  #<--       入边
+  #-[TYPE]-  无方向的指定类型的边
+  #-[TYPE]-> 有方向有类型的边
+  #<-[TYPE]- 有方向有类型的边
+  ###返回相邻的节点
+  EX:
+  -MATCH (s:student)--(v3) RETURN v3
+  #返回TAG为student节点的相邻的边
+5)MATCH (V:TAG)-[e:[TYPE]]-(v2) RETURN e
+  #返回TAG节点相邻的边(MATCHA (V:TAG)-[e]-() RETURN e)
+  EX:
+  -MATCH (s:student)-[e]-() return e
+  #返回student节点所有的边
+  -MATCH (s:student)-[e:score]-() RETURN e
+  #返回student节点所有的跟科目相关的边
+6)MATCH (V:TAG)-[:TYPE*NUM]-(v) return v
+  #返回定长路径
+  EX:
+  -MATCH (s:student)-[o:owner*2]->(v2) return v2
+7)MATCH (V:TAG) RETURN id(v)
+  #返回检索到的点的VID数据
+  EX:
+  -match (s:student) return id(s)

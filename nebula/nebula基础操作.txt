@@ -1,0 +1,97 @@
+###nebula基础操作命令
+1)创建图空间
+  CREATE SPACE IF NOT EXISTS name(partition_num=10,replica_factor=1,vid_type={FIXED_STRING(<N>)|INT64}) [COMMENT='COMMENT']
+  -name 		     图空间的名称nebula实例中可以创建多个图空间(类似关系数据库中的database概念)
+  -partition_num     分区的概念
+  -replica_factor    副本集的数量实现数据冗余
+  -vid_type          设置nebula中顶点(vertex)的ID(简称为VID)的类型nebula中VID有两种类型
+                     -int64(理解成long类型)
+					 -FIXED_STRING<N>(固定长度字符串类似与char(N)的概念)
+					 nebula中不会自动为vertex生成VID将该过程交给应用程序处理并且一旦在创建图空间的时候
+					 指定了VID类型后期无法再进行修改
+2)列出图空间
+  SHOW SPACE		
+  列出当前nebula实例中的所有图空间(类似mysql中的show databases)
+3)选择图空间
+  USER SPACE		
+  选择指定的图空间(类似mysql中use database)
+4)查看TAG或者EDGE的定义
+  SHOW CREATE {TAG|EDGE} name
+  -EX:SHOW CREATE TAG student
+###nebula关于点和边操作(vertex和edge)
+1)创建标签
+  CREATE TAG name(properties type [NOT NULL])
+  -name  	  标签的名称
+  -properties 标签的属性名称
+  -type       标签的属性的数据类型
+  -NOT NULL   定义属性不能为NULL
+  !!!注意nebula中TAG可以不设置属性
+  EX:
+  -CREATE TAG monther()
+  EX:
+  -CREATE TAG student(name string,age int,sex string)
+2)创建边
+  CREATE EDGE name(properties type)
+  -name       边的名称
+  -properties 边属性的名称
+  -type       边属性的类型
+  !!!注意nebula中边也可以设置属性
+  EX:
+   -CREATE EDGE friend()
+   -CREATE EDGE monther(name String)
+3)插入点到图中
+  INERT VERTEX [IF NOT EXISTS] TAG(properties,properties),TAG2(properties,properties) VALUES "VID"(value,value),(value2,value2)
+  -TAG,TAG2                标签的名称必须存在
+  -(properties,properties) 标签对应的属性
+  -VID                     点的VID必须定义且在同一个图空间中唯一
+  -(value,value)           对应TAG的属性的值
+  !!!nebula中一个点可以有多个TAG并且至少存在一个TAG
+     并且tag可以不存在属性
+	 EX:CREATE TAG CAT()|CREATE TAG cat(sex string)
+4)插入边到图中
+  INSERT EDGE [IF NOT EXISTS] EDGE(properties),EDGE2(properties) VALUES "FROM_VID"->"TO_VID":(value):(value2) 
+  -EDGE         边类型必须提前定义
+  -(properties) 边类型定义的属性
+  -FROM_VID     起始顶点的VID属性
+  -TO_VID       终止顶点的VID属性
+  -(value)      边类型对应的属性的值
+  EX:
+   -INSERT EDGE friend(detail) VALUE "V:张三"->"V:李四":("拜把子兄弟")
+   -INSERT EDGE family(detail) VALUE "V:弟弟"->"V:姐姐":("亲姐弟")
+###nebula查询语法
+1)GO语句
+  GO语句从一个或多个点开始，沿着一条或多条边遍历，返回YIELD子句中指定的信息
+  -EX:GO FROM "VID1" OVER follow
+  -从VID1沿着边follow找到所有的点(GO语句相当于查询点数据)
+2)FETCH语句
+  FETCH语句用于查询TAG属性或者边属性
+  EX:
+  -FETCH PROP ON player "player10" 询VID为"player10"的TAG为player的属性
+3)UPDATE语句
+  UPDATE语句用于更新点或边的属性
+  EX:
+  -UPDATE VERTEX "player10" SET player.name = 100 
+  #更新VID为"player10"中的player对象的name属性
+  -UPDATE EDGE "player01"->"player" OF follow SET size = 100
+  #更新"player01"与"player02"之间边类型为follow上面的size属性的值
+4)DELETE语句
+  DELETE语句用于删除点或边
+  EX:
+  -DELETE VERTEX "player01","player02"
+  #删除点"player01","player02"
+  -DELETE EDGE follow "player01"->"player02"
+  #删除点"player01"和"player02"之间属性为follow的边
+###LOOKUP和MATCH(使用前提是查询的VERTEX或EDGE必须先建立索引)
+1)创建索引(TAG创建索引)
+  CREATE {TAG|EDGE} INDEX [IF NOT EXISTS] ON {TAG|EDGE}(properties)
+  EX:
+  -CREATE TAG INDEX player_name_index ON player(name(20));
+  -TAG的name属性创建索引
+  REBUILD TAG INDEX player_name_index
+  -重建索引确保能对已存在数据生效
+2)LOOKUP语句
+  LOOKUP语句使用在已经创建索引的属性上进行搜索
+  EX:
+  -LOOKUP FROM player WHERE player.name = 'zhangsan' YIELD properties(vertex).name as Name,properties(vertex).age as Age
+  -查询所有TAG为player的点并找到name为"zhangsan"的点并返回其姓名和年龄
+  
